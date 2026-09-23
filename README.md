@@ -17,9 +17,47 @@ A fan-made tribute to *LOST*, which premiered on 22 September 2004. It shows the
 
 Everything is procedural: no footage, images, models or audio from the show are used.
 
-## Run it
+## Run it locally
 
-Open `index.html` through any local web server (for example `python3 -m http.server`) in a recent Chrome, Edge or Safari. Browsers without WebGPU fall back to WebGL 2.
+The page uses JavaScript modules, so it needs a local web server; opening `index.html` by double-clicking won't work.
+
+```sh
+cd ~/lost-tribute
+python3 -m http.server 8000
+```
+
+Then open <http://localhost:8000> in a recent Chrome, Edge or Safari. There's nothing to install or build: three.js loads from a CDN. Browsers without WebGPU fall back to WebGL 2.
+
+## How the code is organised
+
+```
+index.html                 page structure: HUD, Swan panel, intro title
+css/style.css              all styling
+js/main.js                 entry point: renderer, camera, builds the island, frame loop
+js/core/
+  terrain-math.js          island shape: shoreline, beach slope, hills (used to place everything)
+  uniforms.js              shared shader values (sun, sky colours, time, discharge...)
+  utils.js                 seeded random numbers and small helpers
+js/environment/
+  sky.js                   sky dome, clouds, stars, and sky light/reflections for all materials
+  lights.js                sun/moon light, fill light, fog
+  time-of-day.js           the light slider: blends 4 keyframes from golden hour to night
+  post.js                  bloom, vignette, film grain
+js/world/
+  terrain.js               the ground: sand, jungle floor, seaweed tide line
+  ocean.js                 waves, foam, shallows, reflections
+  wreck.js                 fuselage, wing, engine, luggage, seats, camp
+  fire.js                  campfire, embers, smoke
+  vegetation.js            palms, coconuts, driftwood, jungle, rocks
+  wildlife.js              seabirds and crabs
+  hatch.js                 the hatch and its light beam
+js/ui/
+  swan.js                  the 108-minute countdown
+  audio.js                 generated sound
+  intro.js                 LOST title card
+```
+
+One thing to know before editing: props are placed with a **seeded random sequence**, so the island looks the same on every visit. `main.js` builds the world in a fixed order; changing that order, or adding random calls in the middle, will shuffle where palms and debris end up.
 
 ## Credits
 
