@@ -425,6 +425,8 @@ const WAVES = [
   { d: [0.5, 1], L: 17, A: 0.18, p: 4.1 },
   { d: [-0.1, 1], L: 11, A: 0.10, p: 2.3 },
   { d: [0.8, 1], L: 7.5, A: 0.06, p: 5.2 },
+  { d: [0.9, 1], L: 23, A: 0.13, p: 3.0 },
+  { d: [-0.8, 1], L: 13, A: 0.07, p: 0.7 },
 ];
 const DETAIL = [
   { d: [0.3, 1], L: 4.1, A: 0.035, p: 0.4 },
@@ -483,8 +485,9 @@ const shoreZn = (x) => sin(x.mul(0.021)).mul(4.0).add(sin(x.mul(0.057).add(1.3))
     const R0 = reflect(V.negate(), N);
     const R = normalize(vec3(R0.x, abs(R0.y), R0.z));
     const refl = skyGradient(R);
-    const shallowF = smoothstep(0.2, 7.0, depth).oneMinus();
+    const shallowF = smoothstep(0.1, 3.4, depth).oneMinus();
     let water = mix(uDeep, uShallow, shallowF);
+    water = mix(water, vec3(0.78, 0.7, 0.5).mul(uFoamLight).mul(0.75), smoothstep(0.0, 0.7, depth).oneMinus().mul(0.4));
     const crest = clamp(big.h.mul(a).mul(1.6), 0.0, 1.0);
     const sss = uShallow.mul(uSunCol).mul(pow(max(dot(V.negate(), uSunDir), 0.0), 3.0)).mul(crest).mul(2.2).mul(uSunUp);
     water = water.add(sss);
@@ -495,13 +498,17 @@ const shoreZn = (x) => sin(x.mul(0.021)).mul(4.0).add(sin(x.mul(0.057).add(1.3))
     // foam
     const thickness = pw.y.add(depth);
     const n1 = mx_noise_float(vec3(P.mul(vec2(0.55, 1.1)), uT.mul(0.35))).mul(0.5).add(0.5);
-    const n2 = mx_noise_float(vec3(P.mul(2.3), uT.mul(0.6))).mul(0.5).add(0.5);
-    const edge = smoothstep(0.0, 0.26, thickness).oneMinus().mul(smoothstep(0.35, 0.65, n2.add(0.25)));
+    const streak = mx_noise_float(vec3(P.mul(vec2(0.18, 1.6)), uT.mul(0.25)));
+    const vein = mx_noise_float(vec3(P.mul(vec2(0.8, 2.2)).add(vec2(uT.mul(0.12), 0.0)), uT.mul(0.3)));
+    const edge = smoothstep(0.0, 0.15, thickness).oneMinus().mul(smoothstep(-0.4, 0.15, streak));
     const phase = fract(uT.mul(0.085).add(P.x.mul(0.0023)).add(n1.mul(0.08)));
     const breakD = mix(float(2.4), float(0.1), phase);
-    const band = smoothstep(0.0, 0.3, abs(depth.sub(breakD))).oneMinus().mul(smoothstep(0.35, 0.62, n1)).mul(phase.mul(0.6).oneMinus());
-    const lace = smoothstep(0.62, 0.85, n2).mul(step(depth, breakD)).mul(smoothstep(0.0, 1.6, depth).oneMinus()).mul(0.45);
-    const whitecap = smoothstep(0.85, 1.1, big.h.mul(a)).mul(smoothstep(0.6, 0.85, n1)).mul(0.35);
+    const band = smoothstep(0.0, 0.2, abs(depth.sub(breakD))).oneMinus().mul(smoothstep(-0.25, 0.3, streak)).mul(phase.mul(0.6).oneMinus());
+    const shoreSide = step(depth, breakD).mul(smoothstep(0.0, 0.9, depth).oneMinus()).mul(smoothstep(0.05, 0.55, n1));
+    const lace = smoothstep(0.0, 0.05, abs(vein)).oneMinus().mul(shoreSide).mul(0.35);
+    const whitecap = smoothstep(0.9, 1.15, big.h.mul(a)).mul(smoothstep(0.3, 0.7, n1)).mul(0.25);
+    const ca = mx_noise_float(vec3(P.mul(0.9), uT.mul(0.45)));
+    col = col.add(uSunCol.mul(pow(abs(ca).oneMinus(), 16.0)).mul(smoothstep(0.0, 1.1, depth).oneMinus()).mul(smoothstep(6.0, 40.0, dist).oneMinus()).mul(uSunUp.mul(0.8).add(0.2)).mul(0.1));
     const foam = clamp(edge.add(band).add(lace).add(whitecap), 0.0, 1.0);
     const foamCol = mix(uHorizon, vec3(1.0), 0.55).mul(uFoamLight);
     col = mix(col, foamCol, foam);
@@ -925,12 +932,16 @@ const softDisc = smoothstep(0.05, 0.5, length(uv().sub(0.5))).oneMinus();
    Jungle canopy, bushes and lava rocks (instanced)
    ========================================================================= */
 {
-  const blobGeo = new THREE.IcosahedronGeometry(1, 1);
+  const blobGeo = new THREE.IcosahedronGeometry(1, 3);
   const bp = blobGeo.attributes.position;
-  for (let i = 0; i < bp.count; i++) { const s = 1 + (h2(i, 3) - 0.5) * 0.35; bp.setXYZ(i, bp.getX(i) * s, bp.getY(i) * s * 0.8, bp.getZ(i) * s); }
+  for (let i = 0; i < bp.count; i++) {
+    const x = bp.getX(i), y = bp.getY(i), z = bp.getZ(i);
+    const s = 1 + 0.14 * Math.sin(x * 5.1 + z * 2.3) * Math.cos(y * 4.7 - x * 1.3) + 0.08 * Math.sin(z * 9.7 + y * 6.1);
+    bp.setXYZ(i, x * s, Math.max(y, -0.35) * s * 0.8, z * s);
+  }
   blobGeo.computeVertexNormals();
   const N = isPhone ? 2400 : 4200;
-  const canopy = new THREE.InstancedMesh(blobGeo, new THREE.MeshStandardMaterial({ roughness: 0.92, flatShading: true }), N);
+  const canopy = new THREE.InstancedMesh(blobGeo, new THREE.MeshStandardMaterial({ roughness: 0.92 }), N);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), ps = new THREE.Vector3(), col = new THREE.Color();
   const greens = ['#24361a', '#2d4420', '#1d2e16', '#3a4d22', '#2a3d27', '#33471c'].map((c) => new THREE.Color(c));
   let n = 0, tries = 0;
@@ -986,6 +997,22 @@ const softDisc = smoothstep(0.05, 0.5, length(uv().sub(0.5))).oneMinus();
   }
   rocks.castShadow = true; rocks.receiveShadow = true;
   scene.add(rocks);
+}
+
+/* ---------- Seabirds circling over the shore ---------- */
+const birds = [];
+{
+  const wingGeo = new THREE.BufferGeometry();
+  wingGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, -0.18, 0, 0, 0.22, 1, 0.02, -0.05], 3));
+  wingGeo.computeVertexNormals();
+  const birdMat = new THREE.MeshBasicMaterial({ color: 0x16120f, side: THREE.DoubleSide });
+  for (let i = 0; i < 7; i++) {
+    const b = new THREE.Group();
+    const l = new THREE.Mesh(wingGeo, birdMat), r = new THREE.Mesh(wingGeo, birdMat);
+    r.scale.x = -1; b.add(l, r); b.scale.setScalar(R(0.7, 1.1));
+    b.userData = { l, r, rad: R(14, 34), h: R(16, 30), speed: R(0.08, 0.16) * (rnd() < 0.5 ? -1 : 1), ph: R(0, 6.28), cx: R(-20, 30), cz: R(-10, 20), flap: R(5, 7) };
+    scene.add(b); birds.push(b);
+  }
 }
 
 /* =========================================================================
@@ -1281,6 +1308,15 @@ async function frame() {
   audio.tick(elapsed);
 
   engine.userData.fan.rotation.y += dt * (0.25 + uWind.value * 0.4);
+  for (const b of birds) {
+    const u = b.userData, a = u.ph + elapsed * u.speed;
+    b.position.set(u.cx + Math.cos(a) * u.rad, u.h + Math.sin(elapsed * 0.3 + u.ph) * 1.5, u.cz + Math.sin(a) * u.rad);
+    b.rotation.y = -a + (u.speed > 0 ? 0 : Math.PI);
+    const glide = Math.sin(elapsed * 0.7 + u.ph) > 0.2;
+    const f = glide ? 0.12 : Math.sin(elapsed * u.flap + u.ph) * 0.6;
+    u.l.rotation.z = f; u.r.rotation.z = -f;
+    b.visible = uNight.value < 0.8;
+  }
   fireLight.intensity = (55 + Math.sin(elapsed * 13) * 6 + Math.sin(elapsed * 31) * 4 + Math.random() * 6) * (1 + uNight.value * 0.5);
   scene.userData.hatchLight.intensity = uBeam.value * 90;
   scene.userData.sky.position.copy(camera.position);
