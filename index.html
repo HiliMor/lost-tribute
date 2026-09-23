@@ -357,6 +357,26 @@ function skyGradient(dir) {
   scene.add(sky);
   scene.userData.sky = sky;
 }
+/* ---------- Sky light and reflections for every material (re-baked when the light changes) ---------- */
+const envScene = new THREE.Scene();
+{
+  const em = new THREE.MeshBasicNodeMaterial({ side: THREE.BackSide, depthWrite: false, fog: false });
+  em.colorNode = Fn(() => {
+    const dir = normalize(positionLocal);
+    const c = skyGradient(dir);
+    // the sand and jungle below the horizon bounce a little warm light back up
+    return mix(c, uHorizon.mul(0.35).add(vec3(0.05, 0.04, 0.03)), smoothstep(0.02, 0.25, dir.y.negate()));
+  })();
+  envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 48, 24), em));
+}
+const pmrem = new THREE.PMREMGenerator(renderer);
+let envRT = null, envDirty = true, envAt = -1;
+function bakeEnvironment() {
+  envRT = pmrem.fromScene(envScene, 0.02, 0.1, 100, { size: 128, renderTarget: envRT });
+  scene.environment = envRT.texture;
+  envDirty = false;
+}
+scene.environmentIntensity = 0.6;
 
 /* =========================================================================
    Terrain
@@ -409,7 +429,11 @@ function gridGeometry(xs, zs, yFn) {
   const wetF = smoothstep(0.1, 0.55, pw.y).oneMinus();
   // tiny sand ripples near the tide line
   const ripple = sin(pw.z.mul(5.0).add(mx_noise_float(pw.mul(0.8)).mul(3.0))).mul(0.03).mul(wetF);
-  mat.colorNode = vertexColor().mul(grain.add(ripple).add(1.0)).mul(mix(1.0, 0.62, wetF));
+  const dShore = pw.z.sub(sin(pw.x.mul(0.021)).mul(4.0).add(sin(pw.x.mul(0.057).add(1.3)).mul(2.5)));
+  const wn = mx_noise_float(vec3(pw.xz.mul(vec2(0.35, 0.9)), 1.7));
+  const wrack = smoothstep(0.0, 0.55, abs(dShore.sub(3.9).sub(wn.mul(0.9)))).oneMinus()
+    .mul(smoothstep(-0.1, 0.35, mx_noise_float(vec3(pw.xz.mul(vec2(0.6, 2.5)), 4.2)))).mul(0.75);
+  mat.colorNode = mix(vertexColor().mul(grain.add(ripple).add(1.0)).mul(mix(1.0, 0.62, wetF)), vec3(0.11, 0.095, 0.05), wrack);
   mat.roughnessNode = mix(float(0.95), float(0.32), wetF);
   const terrain = new THREE.Mesh(g, mat);
   terrain.receiveShadow = true;
@@ -856,6 +880,7 @@ const softDisc = smoothstep(0.05, 0.5, length(uv().sub(0.5))).oneMinus();
 /* =========================================================================
    Palms (merged geometry, wind in the vertex shader)
    ========================================================================= */
+const palmBases = [];
 {
   const tp = [], tn = [], tc = [], ts = [], tph = [], ti = [];
   const fp = [], fu = [], fc = [], fs = [], fph = [], fi = [];
@@ -863,6 +888,7 @@ const softDisc = smoothstep(0.05, 0.5, length(uv().sub(0.5))).oneMinus();
   const v = new THREE.Vector3(), tan = new THREE.Vector3(), side = new THREE.Vector3(), nrm = new THREE.Vector3(), b1 = new THREE.Vector3(), b2 = new THREE.Vector3();
   function palm(x, z, H, leanDir, lean) {
     const base = new THREE.Vector3(x, terrainH(x, z) - 0.4, z);
+    palmBases.push(base);
     const phase = R(0, 6.28);
     const at = (s) => new THREE.Vector3(base.x + leanDir.x * lean * H * Math.pow(s, 1.6), base.y + s * H, base.z + leanDir.z * lean * H * Math.pow(s, 1.6));
     const rings = 16, rad = 8, start = tp.length / 3;
@@ -967,6 +993,43 @@ const softDisc = smoothstep(0.05, 0.5, length(uv().sub(0.5))).oneMinus();
   fm.positionNode = positionLocal.add(windOff.mul(0.55)).add(flutter.mul(uWind.mul(3.0)));
   const fronds = new THREE.Mesh(fg, fm); fronds.castShadow = true; fronds.receiveShadow = true; fronds.frustumCulled = false;
   scene.add(fronds);
+}
+
+/* ---------- Fallen coconuts and bleached driftwood ---------- */
+{
+  const nutGeo = new THREE.SphereGeometry(0.14, 12, 9); nutGeo.scale(1, 0.92, 1.12);
+  const nuts = new THREE.InstancedMesh(nutGeo, new THREE.MeshStandardMaterial({ roughness: 0.75 }), 260);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), ps = new THREE.Vector3(), sc = new THREE.Vector3(1, 1, 1), c = new THREE.Color();
+  let n = 0;
+  for (const b of palmBases) {
+    if (rnd() < 0.45) continue;
+    const k = 1 + Math.floor(rnd() * 3);
+    for (let i = 0; i < k && n < 260; i++) {
+      const a = R(0, 6.28), r = R(0.6, 2.2), x = b.x + Math.cos(a) * r, z = b.z + Math.sin(a) * r;
+      ps.set(x, terrainH(x, z) + 0.08, z); q.setFromEuler(new THREE.Euler(R(0, 3), R(0, 6), R(0, 3)));
+      nuts.setMatrixAt(n, m.compose(ps, q, sc.setScalar(R(0.85, 1.15))));
+      nuts.setColorAt(n, c.set(rnd() < 0.3 ? '#5f6b22' : rnd() < 0.5 ? '#6b4526' : '#3f2a18'));
+      n++;
+    }
+  }
+  nuts.count = n; nuts.castShadow = true; nuts.receiveShadow = true;
+  scene.add(nuts);
+
+  const woodM = new THREE.MeshStandardMaterial({ color: 0xa39682, roughness: 1 });
+  for (let i = 0; i < 11; i++) {
+    const x = R(-150, 110);
+    if (Math.abs(x - 4) < 16) continue;
+    const z = shoreZ(x) + R(3, 6.5), len = R(1.4, 4.2);
+    const g = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(R(0.08, 0.14), R(0.12, 0.22), len, 8), woodM);
+    trunk.rotation.z = Math.PI / 2; g.add(trunk);
+    for (let k = 0; k < 2; k++) {
+      const br = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.06, R(0.5, 1.1), 6), woodM);
+      br.position.set(R(-len / 3, len / 3), 0.15, 0); br.rotation.set(R(-0.8, 0.8), 0, R(0.5, 1.2)); g.add(br);
+    }
+    placeOn(g, x, z, 0.05); g.position.y += 0.1; g.rotation.y = R(0, 6.28);
+    scene.add(shadowy(g));
+  }
 }
 
 /* =========================================================================
@@ -1122,7 +1185,8 @@ function applyTime(t) {
   uBeam.value = sstep(0.72, 0.95, t);
   scene.fog.color.copy(lerpKey(t, 'fog'));
   scene.fog.density = 0.0021 + uNight.value * 0.0012;
-  hemi.color.copy(lerpKey(t, 'hs')); hemi.groundColor.copy(lerpKey(t, 'hg')); hemi.intensity = lerpKey(t, 'hi');
+  hemi.color.copy(lerpKey(t, 'hs')); hemi.groundColor.copy(lerpKey(t, 'hg')); hemi.intensity = lerpKey(t, 'hi') * 0.6;
+  envDirty = true;
   renderer.toneMappingExposure = lerpKey(t, 'exp');
   const sunI = lerpKey(t, 'light'), moonI = sstep(0.62, 1, t) * 0.55;
   if (sunI >= moonI) { sun.color.copy(lerpKey(t, 'lcol')); sun.intensity = sunI; sun.position.copy(FOCUS).addScaledVector(uSunDir.value, 220); }
@@ -1379,6 +1443,7 @@ async function frame() {
   shake.set((Math.random() - 0.5), (Math.random() - 0.5), (Math.random() - 0.5)).multiplyScalar(0.12 * dis * dis);
   camera.position.add(shake);
 
+  if ((envDirty && elapsed - envAt > 0.12) || (uDis.value > 0.01 && elapsed - envAt > 0.25)) { envAt = elapsed; bakeEnvironment(); }
   pipeline.render();
   if (firstFrame) { firstFrame = false; revealWhenReady(); }
 }
