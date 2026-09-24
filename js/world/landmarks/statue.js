@@ -1,7 +1,8 @@
 // The Statue of Taweret: all that remains is the four-toed foot on a stone plinth,
 // standing on the rocks off the west coast ("Live Together, Die Alone", season 2).
 import * as THREE from 'three/webgpu';
-import { SITES, ISLAND } from '../../core/layout.js';
+import { SITES } from '../../core/layout.js';
+import { toCoastDistance, seaDir } from '../../core/terrain-math.js';
 import { R, shadowy } from '../../core/utils.js';
 import { stoneMaterial } from './materials.js';
 
@@ -22,7 +23,7 @@ function calfGeometry() {
 }
 
 export function createStatue(scene) {
-  const s = SITES.statue;
+  const s = toCoastDistance(SITES.statue, -12);   // on the rocks just off the beach
   const g = new THREE.Group();
   const stone = stoneMaterial('#bba98c', { moss: 0.1, scale: 0.25 });
   const rockM = new THREE.MeshStandardMaterial({ color: 0x3a3631, roughness: 0.9, flatShading: true });
@@ -65,7 +66,8 @@ export function createStatue(scene) {
 
   g.position.set(s.x, -0.8, s.z);
   // toes face out to sea
-  g.rotation.y = Math.atan2(s.x - ISLAND.cx, s.z - ISLAND.cz);
+  const sea = seaDir(s.x, s.z);
+  g.rotation.y = Math.atan2(sea.x, sea.z);
   scene.add(shadowy(g));
   return g;
 }

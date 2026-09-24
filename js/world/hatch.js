@@ -2,11 +2,12 @@
 import * as THREE from 'three/webgpu';
 import { vec3, sin, dot, normalize, pow, abs, uv, positionWorld, cameraPosition, normalWorld } from 'three/tsl';
 import { terrainH } from '../core/terrain-math.js';
+import { SITES } from '../core/layout.js';
 import { shadowy } from '../core/utils.js';
 import { uT, uBeam } from '../core/uniforms.js';
 
 export function createHatch(scene) {
-  const HATCH = new THREE.Vector3(-58, 0, 64); HATCH.y = terrainH(HATCH.x, HATCH.z);
+  const HATCH = new THREE.Vector3(SITES.hatch.x, 0, SITES.hatch.z); HATCH.y = terrainH(HATCH.x, HATCH.z);
 
   const g = new THREE.Group();
   const frame = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.3, 2.4), new THREE.MeshStandardMaterial({ color: 0x55534d, roughness: 0.9 }));

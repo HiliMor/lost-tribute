@@ -1,7 +1,7 @@
 // Hydra Island, off the east coast: the DHARMA station where Jack, Kate and Sawyer
 // were held in cages by the Others (season 3).
 import * as THREE from 'three/webgpu';
-import { SITES, HYDRA } from '../../core/layout.js';
+import { SITES, ISLAND } from '../../core/layout.js';
 import { terrainH } from '../../core/terrain-math.js';
 import { shadowy } from '../../core/utils.js';
 import { stoneMaterial, strut } from './materials.js';
@@ -45,7 +45,7 @@ export function createHydra(scene) {
 
   g.position.set(site.x, terrainH(site.x, site.z) - 0.1, site.z);
   // face the main island
-  g.rotation.y = Math.atan2(site.x - HYDRA.x, site.z - HYDRA.z) + Math.PI;
+  g.rotation.y = Math.atan2(ISLAND.x - site.x, ISLAND.z - site.z);
   scene.add(shadowy(g));
   return g;
 }

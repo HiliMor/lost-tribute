@@ -57,7 +57,7 @@ export function createOcean(scene, heightTex) {
   const ampAt = (p) => {
     const hUV = vec2(p.x.sub(x0).div(x1 - x0), p.y.sub(z0).div(z1 - z0));
     const depth = texture(heightTex, hUV).r.negate();
-    const far = smoothstep(1300.0, 4000.0, length(p.sub(vec2(ISLAND.cx, ISLAND.cz))));
+    const far = smoothstep(1300.0, 4000.0, length(p.sub(vec2(ISLAND.x, ISLAND.z))));
     return { depth, a: smoothstep(-0.6, 4.5, depth).mul(far.oneMinus().mul(0.8).add(0.2)) };
   };
   // water running up the beach

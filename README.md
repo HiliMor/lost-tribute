@@ -8,7 +8,7 @@ A fan-made tribute to *LOST*, which premiered on 22 September 2004. It shows the
 
 ## What's in it
 
-- **The whole Island**, laid out after [Jonah Adkins' 2010 fan map](https://lostpedia.fandom.com/wiki/Fan_maps) (cross-checked with Choekaas's satellite-style map): the crash beach on the south coast, the Hatch just inland, the Black Rock and the Beechcraft in the middle, Taweret halfway up the west coast, the Temple in the north-west, the Barracks in the north, the Lighthouse on the south-east peninsula and Hydra Island to the east. The island is compressed to about 2 km so it can be explored.
+- **The whole Island**, traced from [Choekaas's map of the Island](https://i.imgur.com/NrhXLUu.jpeg) (updated fall 2024), the map [r/lost recommends as the most accurate](https://www.reddit.com/r/lost/comments/1h8lpkr/which_map_of_the_island_is_most_accurate/). The coastline, the mountains and every landmark's position come from his map; the island map in the app is drawn north-up like his. Around the camp, the hand-built crash beach takes over. Distances are true to the map's scale (the island is about 2 km across).
 - **An island map** (press **M**): click a numbered place to fly there. Each place links to the episode it's from:
   1. Crash site, south shore: the Oceanic 815 wreck, signal fire, camp
   2. The Hatch: the Swan station (its light comes on at night)
@@ -45,8 +45,13 @@ Then open <http://localhost:8000> in a recent Chrome, Edge or Safari. There's no
 index.html                 page structure: HUD, Swan panel, intro title
 css/style.css              all styling
 js/main.js                 entry point: renderer, camera, builds the island, frame loop
+js/data/
+  island.bin               coastline distance + height grids traced from Choekaas's map
+  island-meta.js           grid bounds, map <-> world transform, landmark positions
+tools/
+  build-island.py          regenerates js/data from the map image (numpy, pillow, scipy)
 js/core/
-  layout.js                where everything is: island outline, landmark positions, clearings
+  layout.js                landmark positions and clearings, map <-> world conversion
   terrain-math.js          ground height everywhere (used to place everything)
   camera-flight.js         smooth camera flights between places
   uniforms.js              shared shader values (sun, sky colours, time, discharge...)
@@ -77,6 +82,8 @@ js/ui/
 One thing to know before editing: props are placed with a **seeded random sequence**, so the island looks the same on every visit. `main.js` builds the world in a fixed order; changing that order, or adding random calls in the middle, will shuffle where palms and debris end up.
 
 ## Credits
+
+- Island geography: [Choekaas's map of the Island](https://i.imgur.com/NrhXLUu.jpeg) ([choekaas.no](https://choekaas.no)). The map image isn't included here, only coarse coastline and height data derived from it.
 
 - [three.js](https://github.com/mrdoob/three.js) (MIT)
 - Fonts from Google Fonts (SIL Open Font License): Cormorant Garamond, Jost, VT323 and Noto Sans Egyptian Hieroglyphs

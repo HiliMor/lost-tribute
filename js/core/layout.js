@@ -1,62 +1,42 @@
-// Where things are on the Island. Laid out after Jonah Adkins' 2010 fan map (the only detailed map
-// made after the finale, and the one most shared by fans), cross-checked with Choekaas's satellite-style
-// map: the crash beach on the south coast, the Hatch and caves just inland, the Beechcraft and the
-// Black Rock in the middle, Taweret halfway up the west coast, the Temple in the north-west,
-// the Barracks in the north, the Lighthouse on the south-east peninsula and Hydra Island to the east.
-// Compressed so the whole island can be explored. Units are metres; +x is east, +z is north.
+// Where things are on the Island. Traced from Choekaas's fan map of the Island (updated fall 2024),
+// the map r/lost recommends as the most accurate. See tools/build-island.py for how the coastline,
+// mountains and landmark positions are extracted from it.
+//
+// The world is that map rotated so the crash site's beach runs along world +x with the sea to the
+// south (-z). Units are metres. toWorld() / toMap() convert between map pixels and the world.
+import META from '../data/island-meta.js';
 
-// The main island: an oval, taller north-south than wide, whose south edge is cut by the crash beach.
-export const ISLAND = { cx: 0, cz: 820, stretch: 1.18 };
-const angleTo = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
-export function islandR(theta) {
-  return 860 + 50 * Math.sin(3 * theta + 0.5) + 36 * Math.sin(5 * theta + 1.7) + 24 * Math.sin(9 * theta + 0.3)
-    + 22 * Math.sin(13 * theta + 2.1) + 12 * Math.sin(21 * theta + 0.7)
-    - 150 * Math.exp(-((angleTo(theta, 2.75) / 0.15) ** 2))     // the bay on the west coast (French camp)
-    + 90 * Math.exp(-((angleTo(theta, 1.75) / 0.12) ** 2))      // the north shore point
-    + 190 * Math.exp(-((angleTo(theta, -0.62) / 0.2) ** 2));    // the south-east peninsula (Lighthouse)
+const { anchor, tangent: t, normal: n, shore, metresPerPx: M } = META.map;
+
+// map pixel (quarter resolution, y pointing down) -> world metres
+export function toWorld(mx, my) {
+  const dx = (mx - anchor[0]) * M, dy = (my - anchor[1]) * M;
+  return { x: dx * t[0] + dy * t[1] + shore[0], z: dx * n[0] + dy * n[1] + shore[1] };
 }
-// Polar coordinates around the island centre, with north-south squashed so the outline is a circle.
-export function islandPolar(x, z) {
-  const dx = x - ISLAND.cx, dz = (z - ISLAND.cz) / ISLAND.stretch;
-  return { theta: Math.atan2(dz, dx), r: Math.hypot(dx, dz) };
+// world metres -> map pixel
+export function toMap(x, z) {
+  const dx = x - shore[0], dz = z - shore[1];
+  return { x: anchor[0] + (dx * t[0] + dz * n[0]) / M, y: anchor[1] + (dx * t[1] + dz * n[1]) / M };
 }
-// A point on the main coastline at a compass angle (radians, 0 = east, PI/2 = north), `inset` metres inland.
-export function coastPoint(theta, inset = 0) {
-  const r = islandR(theta) - inset;
-  return { x: ISLAND.cx + Math.cos(theta) * r, z: ISLAND.cz + Math.sin(theta) * r * ISLAND.stretch };
-}
+export const MAP_SIZE = { width: META.map.width, height: META.map.height };
 
-// Hydra Island, a small island off the east coast.
-export const HYDRA = { x: 1330, z: 1050, r: 170 };
+// The middle of the main island.
+export const ISLAND = META.centre;
 
-const deg = (d) => d * Math.PI / 180;
-const statue = coastPoint(deg(192), -18);        // just offshore, halfway up the west coast
-const lighthouse = coastPoint(deg(-36), 26);     // on the cliffs of the south-east peninsula
-
-// Landmark positions (ground height is taken from the terrain at runtime).
-export const SITES = {
-  crash:      { x: 4, z: 11 },
-  hatch:      { x: -58, z: 64 },
-  beechcraft: { x: 30, z: 470 },
-  blackRock:  { x: 150, z: 620 },
-  statue,
-  temple:     { x: -250, z: 1330 },
-  radio:      { x: -470, z: 800 },
-  barracks:   { x: 60, z: 1560 },
-  lighthouse,
-  hydra:      { x: HYDRA.x - 40, z: HYDRA.z - 20 },
-};
+// Landmark positions, read off the map (ground height is taken from the terrain at runtime).
+// The wreck itself keeps its place on the hand-built crash beach.
+export const SITES = { ...META.sites, crash: { x: 4, z: 11 } };
 
 // Open ground around landmarks: the terrain is levelled there and no jungle is planted.
 // `r` = radius in metres, `flat` = how strongly the ground is levelled (0..1).
 export const CLEARINGS = [
   { site: 'barracks',   r: 125, flat: 0.9 },
-  { site: 'temple',     r: 105, flat: 0.95 },
-  { site: 'blackRock',  r: 55,  flat: 0.85 },
-  { site: 'radio',      r: 18,  flat: 0.7 },
+  { site: 'temple',     r: 125, flat: 0.97 },
+  { site: 'blackRock',  r: 70,  flat: 0.85 },
+  { site: 'radio',      r: 45,  flat: 0.6 },
   { site: 'lighthouse', r: 28,  flat: 0.8 },
   { site: 'hydra',      r: 45,  flat: 0.8 },
   { site: 'statue',     r: 30,  flat: 0 },
   { site: 'beechcraft', r: 7,   flat: 0 },
-  { site: 'hatch',      r: 10,  flat: 0 },
+  { site: 'hatch',      r: 32,  flat: 0.4 },
 ];

@@ -5,8 +5,8 @@ import {
   float, vec2, vec3, sin, dot, normalize, mix, smoothstep, max, pow, abs, fract, floor, hash, step, select,
   uv, attribute, positionLocal, positionWorld, cameraPosition, vertexColor, mx_noise_float
 } from 'three/tsl';
-import { h2, shoreZ, terrainH, landDist } from '../core/terrain-math.js';
-import { SITES, CLEARINGS, HYDRA, coastPoint } from '../core/layout.js';
+import { h2, shoreZ, terrainH, landDist, seaDir, WORLD_BOUNDS } from '../core/terrain-math.js';
+import { SITES, CLEARINGS } from '../core/layout.js';
 import { isPhone, rnd, R, placeOn, shadowy } from '../core/utils.js';
 import { uT, uSunDir, uSunCol, uSunUp, uWind } from '../core/uniforms.js';
 
@@ -109,22 +109,21 @@ function createPalms(scene) {
   for (let i = 0; i < 26; i++) { const x = R(-160, 120); spots.push([x, shoreZ(x) + R(13, 20), true]); }
   for (let i = 0; i < 110; i++) { const x = R(-230, 170); spots.push([x, shoreZ(x) + R(18, 46), false]); }
   for (const [x, z, edge] of spots) {
+    if (landDist(x, z) < 8) continue;               // the cove is narrower than the old straight beach
     if (Math.hypot(x - 4, z - 12) < 13) continue;   // keep the wreck clear
     if (Math.hypot(x + 6, z - 18.5) < 5) continue;  // and the fire
     const toSea = new THREE.Vector3(R(-0.4, 0.4), 0, -1).normalize();
     palm(x, z, R(7, 13), edge ? toSea : new THREE.Vector3(R(-1, 1), 0, R(-1, 0.3)).normalize(), edge ? R(0.25, 0.5) : R(0.04, 0.2));
   }
-  // palms along the rest of the coastline and on Hydra Island, leaning out to sea
-  const LH = SITES.lighthouse, ST = SITES.statue;
-  for (let i = 0; i < 110; i++) {
-    const th = R(-0.95, 3.7), p = coastPoint(th, R(14, 42));
-    if (Math.hypot(p.x - LH.x, p.z - LH.z) < 90 || Math.hypot(p.x - ST.x, p.z - ST.z) < 40 || p.z < 60) continue;
-    palm(p.x, p.z, R(7, 13), new THREE.Vector3(Math.cos(th), 0, Math.sin(th)), R(0.15, 0.45));
-  }
-  for (let i = 0; i < 16; i++) {
-    const th = R(0, Math.PI * 2), r = HYDRA.r * 0.72 - R(0, 30);
-    if (Math.abs(Math.cos(th) + 0.9) < 0.35) continue;   // leave the Hydra station clear
-    palm(HYDRA.x + Math.cos(th) * r, HYDRA.z + Math.sin(th) * r, R(7, 11), new THREE.Vector3(Math.cos(th), 0, Math.sin(th)), R(0.15, 0.4));
+  // palms along every other stretch of coast (Hydra Island too), leaning out to sea
+  const B = WORLD_BOUNDS, keepClear = [SITES.lighthouse, SITES.statue, SITES.hydra, SITES.temple];
+  for (let n = 0, tries = 0; n < 150 && tries < 40000; tries++) {
+    const x = R(B.x0, B.x1), z = R(B.z0, B.z1), d = landDist(x, z);
+    if (d < 12 || d > 40 || Math.hypot(x - 4, z - 5) < 200) continue;
+    if (keepClear.some((s) => Math.hypot(x - s.x, z - s.z) < 60)) continue;
+    const sea = seaDir(x, z);
+    palm(x, z, R(7, 13), new THREE.Vector3(sea.x, 0, sea.z), R(0.15, 0.45));
+    n++;
   }
 
   const tg = new THREE.BufferGeometry();
@@ -212,6 +211,7 @@ function createBeachLitter(scene, palmBases) {
     const x = R(-150, 110);
     if (Math.abs(x - 4) < 16) continue;
     const z = shoreZ(x) + R(3, 6.5), len = R(1.4, 4.2);
+    if (landDist(x, z) < 2 || landDist(x, z) > 9) continue;       // only where the high-tide line really is
     const g = new THREE.Group();
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(R(0.08, 0.14), R(0.12, 0.22), len, 8), woodM);
     trunk.rotation.z = Math.PI / 2; g.add(trunk);
@@ -246,12 +246,11 @@ function createJungle(scene) {
   while (n < N && tries < 160000) {
     tries++;
     const onHydra = tries % 40 === 0;
-    const x = onHydra ? HYDRA.x + R(-190, 190) : R(-1050, 1050), z = onHydra ? HYDRA.z + R(-190, 190) : R(20, 1900);
+    const x = onHydra ? SITES.hydra.x + R(-160, 160) : R(WORLD_BOUNDS.x0, WORLD_BOUNDS.x1), z = onHydra ? SITES.hydra.z + R(-160, 160) : R(WORLD_BOUNDS.z0, WORLD_BOUNDS.z1);
     const d = landDist(x, z);
     if (d < 30 || inClearing(x, z)) continue;
     const h = terrainH(x, z);
     if (h > 330) continue;
-    if (x > 130 && z < 420 && d < 60 && rnd() < 0.7) continue;
     const s = R(3.5, 8.5) * (d < 45 ? 0.7 : 1);
     ps.set(x, h + s * 0.45, z);
     q.setFromEuler(new THREE.Euler(R(-0.2, 0.2), R(0, 6.28), R(-0.2, 0.2)));
@@ -270,7 +269,7 @@ function createJungle(scene) {
   n = 0;
   for (let i = 0; i < 2000 && n < 900; i++) {
     const x = R(-260, 150), z = shoreZ(x) + R(19, 34);
-    if (Math.hypot(x - 4, z - 12) < 12) continue;
+    if (Math.hypot(x - 4, z - 12) < 12 || landDist(x, z) < 15) continue;
     const s = R(0.6, 1.8);
     ps.set(x, terrainH(x, z) + s * 0.25, z);
     q.setFromEuler(new THREE.Euler(0, R(0, 6.28), 0));
@@ -283,22 +282,24 @@ function createJungle(scene) {
   bushes.count = n; bushes.castShadow = true; bushes.receiveShadow = true;
   scene.add(bushes);
 
-  // lava rocks at the east end of the beach and on the headland
+  // lava rocks where the cove meets the rocky headlands either side of the beach
   const rockGeo = new THREE.DodecahedronGeometry(1, 1);
   const rp = rockGeo.attributes.position;
   for (let i = 0; i < rp.count; i++) { const s = 1 + (h2(i, 9) - 0.5) * 0.5; rp.setXYZ(i, rp.getX(i) * s, rp.getY(i) * s, rp.getZ(i) * s); }
   rockGeo.computeVertexNormals();
   const rocks = new THREE.InstancedMesh(rockGeo, new THREE.MeshStandardMaterial({ color: 0x2c2926, roughness: 0.85, flatShading: true }), 160);
   n = 0;
-  for (let i = 0; i < 160; i++) {
-    const x = R(70, 190), z = shoreZ(x) + R(-14, 8) + (x > 120 ? R(-10, 0) : 0);
-    const s = R(0.5, 2.8) * (x > 120 ? 1.8 : 1);
+  for (let i = 0; i < 4000 && n < 160; i++) {
+    const a = R(0, Math.PI * 2), dist = R(70, 420), x = 4 + Math.cos(a) * dist, z = 5 + Math.sin(a) * dist;
+    const d = landDist(x, z);
+    if (d < -10 || d > 3) continue;
+    const s = R(0.5, 2.8) * (dist > 140 ? 1.8 : 1);
     ps.set(x, terrainH(x, z) + s * 0.1, z);
     q.setFromEuler(new THREE.Euler(R(0, 6), R(0, 6), R(0, 6)));
     sc.set(s * R(1, 1.6), s * R(0.6, 1), s * R(1, 1.5));
     rocks.setMatrixAt(n++, m.compose(ps, q, sc));
   }
-  rocks.castShadow = true; rocks.receiveShadow = true;
+  rocks.count = n; rocks.castShadow = true; rocks.receiveShadow = true;
   scene.add(rocks);
 }
 

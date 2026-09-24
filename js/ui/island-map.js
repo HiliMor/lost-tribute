@@ -2,29 +2,31 @@
 // Click a pin (or a name in the list) to fly there.
 import { $ } from '../core/utils.js';
 import { terrainH } from '../core/terrain-math.js';
-import { SITES } from '../core/layout.js';
+import { SITES, toWorld, toMap } from '../core/layout.js';
 import { PLACES, OVERVIEW } from './places.js';
 
 // where each label sits relative to its pin: [x, y] in pin radii, and text alignment
 const LABELS = {
-  crash: [1.5, 0.9, 'left'], hatch: [1.5, -0.1, 'left'], beechcraft: [-1.5, 0.4, 'right'],
-  lighthouse: [-1.5, 0, 'right'], hydra: [0, 2.2, 'center'],
+  crash: [1.5, 0.6, 'left'], hatch: [-1.5, 0.3, 'right'], beechcraft: [1.5, 0.2, 'left'],
+  blackRock: [-1.5, 0.3, 'right'], lighthouse: [-1.5, 0.8, 'right'], hydra: [0, 2.2, 'center'],
+  temple: [-1.5, 0, 'right'],
 };
 
-// the part of the world the map shows (metres)
-const BOUNDS = { x0: -1150, x1: 1560, z0: -240, z1: 1960 };
+// The part of Choekaas's map shown, in map pixels (north is up, as on his map).
+const BOUNDS = { x0: 30, x1: 1200, y0: 20, y1: 1000 };
 
 function drawMap(canvas) {
   const W = canvas.width, H = canvas.height, g = canvas.getContext('2d');
-  const { x0, x1, z0, z1 } = BOUNDS;
-  const toX = (x) => (x - x0) / (x1 - x0) * W, toY = (z) => (1 - (z - z0) / (z1 - z0)) * H;
+  const { x0, x1, y0, y1 } = BOUNDS;
+  // canvas pixel <-> map pixel <-> world
+  const toX = (mx) => (mx - x0) / (x1 - x0) * W, toY = (my) => (my - y0) / (y1 - y0) * H;
 
   // sample heights on a coarse grid, then paint pixels
   const gw = Math.round(W / 2), gh = Math.round(H / 2);
   const hs = new Float32Array(gw * gh);
   for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
-    const x = x0 + (i + 0.5) / gw * (x1 - x0), z = z1 - (j + 0.5) / gh * (z1 - z0);
-    hs[j * gw + i] = terrainH(x, z);
+    const p = toWorld(x0 + (i + 0.5) / gw * (x1 - x0), y0 + (j + 0.5) / gh * (y1 - y0));
+    hs[j * gw + i] = terrainH(p.x, p.z);
   }
   const at = (i, j) => hs[Math.min(gh - 1, Math.max(0, j)) * gw + Math.min(gw - 1, Math.max(0, i))];
   const img = g.createImageData(W, H), px = img.data;
@@ -64,8 +66,8 @@ function drawMap(canvas) {
   const pins = [];
   g.textAlign = 'left';
   PLACES.forEach((p, n) => {
-    const s = p.site ? SITES[p.site] : SITES.crash;
-    const x = toX(s.x), y = toY(s.z), rr = W * 0.017;
+    const s = p.site ? SITES[p.site] : SITES.crash, m = toMap(s.x, s.z);
+    const x = toX(m.x), y = toY(m.y), rr = W * 0.017;
     g.fillStyle = '#8b2b1f'; g.beginPath(); g.arc(x, y, rr, 0, Math.PI * 2); g.fill();
     g.fillStyle = '#f4ecd8'; g.font = `600 ${Math.round(rr * 1.15)}px Jost, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(String(n + 1), x, y + 1);

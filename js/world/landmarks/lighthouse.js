@@ -2,8 +2,8 @@
 // At night its lantern burns and two beams sweep the sea ("Lighthouse", season 6).
 import * as THREE from 'three/webgpu';
 import { vec3, sin, dot, normalize, pow, abs, uv, positionWorld, cameraPosition, normalWorld } from 'three/tsl';
-import { SITES, ISLAND } from '../../core/layout.js';
-import { terrainH } from '../../core/terrain-math.js';
+import { SITES } from '../../core/layout.js';
+import { terrainH, seaDir } from '../../core/terrain-math.js';
 import { shadowy } from '../../core/utils.js';
 import { uT, uNight } from '../../core/uniforms.js';
 import { stoneMaterial } from './materials.js';
@@ -59,7 +59,8 @@ export function createLighthouse(scene) {
   light.position.y = 25.7; g.add(light);
 
   g.position.set(site.x, terrainH(site.x, site.z) - 0.2, site.z);
-  g.rotation.y = Math.atan2(ISLAND.cx - site.x, ISLAND.cz - site.z);   // door faces inland
+  const sea = seaDir(site.x, site.z);
+  g.rotation.y = Math.atan2(-sea.x, -sea.z);   // door faces inland
   scene.add(shadowy(g));
   beams.traverse((o) => { o.castShadow = false; o.receiveShadow = false; });
 
