@@ -99,7 +99,7 @@ export const PLACES = [
   {
     id: 'subDock', season: 3, name: 'The Submarine dock', ref: 'Season 3 · "The Man from Tallahassee"',
     text: "The Others' only way off the island, until Locke blew up the submarine to keep everyone there.",
-    site: 'subDock', lift: 2, offshore: 10, sea: 110, side: 45, height: 18,
+    site: 'subDock', lift: 1, offshore: -18, sea: 55, side: 30, height: 14,
   },
   {
     id: 'jacobsCabin', season: 3, name: "Jacob's cabin", ref: 'Season 3 · "The Man Behind the Curtain"',

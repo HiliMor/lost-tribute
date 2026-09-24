@@ -120,8 +120,8 @@ export default {
       "z": 221.3
     },
     "subDock": {
-      "x": 837.0,
-      "z": 823.8
+      "x": 849.6,
+      "z": 791.0
     },
     "lookingGlass": {
       "x": -263.3,

@@ -78,6 +78,11 @@ function terrainRaw(x, z, d) {
   h += sstep(22, 48, d) * (fbm(x * .018, z * .018) - .38) * 14;                 // hills
   h += mapHeight(x, z) * sstep(18, 110, d);                                     // mountains from the map
   h += sstep(40, 160, d) * (fbm(x * .06 + 5, z * .06, 4) - .5) * 10;            // rough ground inland
+  // the submarine dock's basin and bay were dredged deep enough for a submarine
+  if (d < 0) {
+    const D = SITES.subDock, dd = Math.hypot(x - D.x, z - D.z);
+    if (dd < 260) h -= 11 * (1 - sstep(120, 260, dd)) * sstep(0, -14, d);
+  }
   // the lighthouse stands on a cliff
   const L = SITES.lighthouse, lh = Math.hypot(x - L.x, z - L.z);
   if (lh < 300) h += 26 * Math.exp(-((lh / 90) ** 2)) * sstep(-4, 16, d);

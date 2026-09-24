@@ -4,6 +4,7 @@ import * as THREE from 'three/webgpu';
 import { vec3, fract, step } from 'three/tsl';
 import { SITES } from '../../core/layout.js';
 import { terrainH, seaDir, toCoastDistance } from '../../core/terrain-math.js';
+import { surfaceH } from '../terrain.js';
 import { R, shadowy, canvasTex } from '../../core/utils.js';
 import { uT } from '../../core/uniforms.js';
 import { stoneMaterial, gableRoof, strut } from './materials.js';
@@ -193,21 +194,65 @@ function createOrchid(scene, concrete) {
   walls.castShadow = false; roof.castShadow = false;
 }
 
-// The submarine dock: the pier where Locke blew up the Others' submarine ("The Man from Tallahassee").
+// The submarine dock ("The Man from Tallahassee", season 3): a DHARMA-era concrete pier on the shore of
+// a dredged inner basin, with bollards, a boathouse and the Others' submarine alongside, sinking by the
+// stern after Locke blew it up. A dirt road climbs from the dock to the Barracks, the route the
+// DHARMA vans drove.
 function createSubDock(scene) {
   const g = new THREE.Group();
-  const start = toCoastDistance(SITES.subDock, 3), sea = seaDir(start.x, start.z);
-  const wood = new THREE.MeshStandardMaterial({ color: 0x6d5a45, roughness: 0.95 });
-  const deck = new THREE.Mesh(new THREE.BoxGeometry(4, 0.3, 42), wood); deck.position.set(0, 1.6, 21); g.add(deck);
-  for (let z = 2; z < 42; z += 5) for (const x of [-1.8, 1.8]) g.add(strut(V(x, -4, z), V(x, 1.6, z), 0.18, wood, 6));
-  // the scuttled submarine, half sunk beside the pier
-  const hullM = new THREE.MeshStandardMaterial({ color: 0x2c3034, roughness: 0.6, metalness: 0.4 });
-  const hull = new THREE.Mesh(new THREE.CapsuleGeometry(2.2, 22, 6, 16), hullM);
-  hull.rotation.set(Math.PI / 2, 0, 0.12); hull.position.set(7, -0.9, 30); g.add(hull);
-  const sail = new THREE.Mesh(new THREE.BoxGeometry(1.6, 3, 4), hullM); sail.position.set(7.2, 1.6, 28); sail.rotation.z = 0.12; g.add(sail);
-  g.position.set(start.x, 0, start.z);
+  const base = toCoastDistance(SITES.subDock, 1.5), sea = seaDir(base.x, base.z);
+  const pierM = stoneMaterial('#8a867c', { moss: 0.15, scale: 0.5, roughness: 0.85 });
+  const iron = new THREE.MeshStandardMaterial({ color: 0x2f2c29, metalness: 0.6, roughness: 0.6 });
+  const L = 34;
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(5, 0.6, L), pierM); deck.position.set(0, 1.2, L / 2); g.add(deck);
+  for (let z = 4; z < L; z += 6) for (const x of [-2.1, 2.1]) g.add(strut(V(x, -9, z), V(x, 1, z), 0.35, pierM, 8));
+  for (let z = 3; z < L; z += 5) for (const x of [-2.2, 2.2]) {
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.5, 10), iron); b.position.set(x, 1.75, z); g.add(b);
+  }
+  // tyre fenders along the berth
+  const rubber = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.9 });
+  for (let z = 8; z < L; z += 4) { const t = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.15, 8, 14), rubber); t.position.set(2.65, 0.6, z); t.rotation.y = Math.PI / 2; g.add(t); }
+  // boathouse at the landward end
+  const shed = new THREE.Mesh(new THREE.BoxGeometry(6, 3.2, 5), new THREE.MeshStandardMaterial({ color: 0x9a9384, roughness: 0.9 })); shed.position.set(-5, 1.6, -3); g.add(shed);
+  const shedRoof = new THREE.Mesh(gableRoof(6.6, 5.6, 1.4), new THREE.MeshStandardMaterial({ color: 0x5a5a55, metalness: 0.4, roughness: 0.6, side: THREE.DoubleSide })); shedRoof.position.set(-5, 3.2, -3); g.add(shedRoof);
+  const logo = logoPlate('⌂', 1); logo.position.set(-5, 2.3, -0.48); g.add(logo);
+  // the submarine: alongside the pier's outer end, stern down, bow and sail still above water
+  const hullM = new THREE.MeshStandardMaterial({ color: 0x2b2f33, roughness: 0.55, metalness: 0.4 });
+  const sub = new THREE.Group();
+  const hull = new THREE.Mesh(new THREE.CapsuleGeometry(2.3, 24, 8, 20), hullM); hull.rotation.x = Math.PI / 2; sub.add(hull);
+  const sail = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.2, 4.5), hullM); sail.position.set(0, 3.2, 3); sub.add(sail);
+  for (const x of [-1.8, 1.8]) { const plane = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.15, 1.2), hullM); plane.position.set(x, 3.6, 3.6); sub.add(plane); }
+  const scorch = new THREE.Mesh(new THREE.SphereGeometry(1.4, 12, 8), new THREE.MeshStandardMaterial({ color: 0x0e0d0c, roughness: 1 }));
+  scorch.scale.set(1, 0.6, 1.6); scorch.position.set(1.6, 0.8, -8); sub.add(scorch);   // the blast hole aft
+  sub.position.set(6.2, -0.9, L - 14); sub.rotation.set(-0.12, 0.03, 0.2);           // stern sinking, rolled away from the pier
+  g.add(sub);
+  // an oil slick spreading from the wreck
+  const slick = new THREE.Mesh(new THREE.CircleGeometry(9, 32), new THREE.MeshStandardMaterial({ color: 0x0b0d10, roughness: 0.05, metalness: 0.6, transparent: true, opacity: 0.55, depthWrite: false }));
+  slick.rotation.x = -Math.PI / 2; slick.scale.set(1, 1.6, 1); slick.position.set(7, 0.08, L - 18); g.add(slick);
+  g.position.set(base.x, 0, base.z);
   g.rotation.y = Math.atan2(sea.x, sea.z);
   scene.add(shadowy(g));
+  slick.castShadow = false;
+
+  // the dirt road up to the Barracks
+  const road = [], B = SITES.barracks, steps = 70;
+  const start = new THREE.Vector3(base.x, 0, base.z).addScaledVector(new THREE.Vector3(sea.x, 0, sea.z), -6);
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps, bend = Math.sin(t * Math.PI) * 45;
+    const dx = B.x - start.x, dz = B.z - start.z, len = Math.hypot(dx, dz);
+    road.push(new THREE.Vector3(start.x + dx * t + (-dz / len) * bend, 0, start.z + dz * t + (dx / len) * bend));
+  }
+  const pos = [], idx = [];
+  road.forEach((p, i) => {
+    const q = road[Math.min(road.length - 1, i + 1)], r = road[Math.max(0, i - 1)];
+    const dx = q.x - r.x, dz = q.z - r.z, len = Math.hypot(dx, dz) || 1, nx = -dz / len * 1.8, nz = dx / len * 1.8;
+    for (const sgn of [-1, 1]) { const x = p.x + nx * sgn, z = p.z + nz * sgn; pos.push(x, surfaceH(x, z) + 0.12, z); }
+    if (i > 0) { const a = (i - 1) * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+  });
+  const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); rg.setIndex(idx); rg.computeVertexNormals();
+  const roadMesh = new THREE.Mesh(rg, new THREE.MeshStandardMaterial({ color: 0x6f5e44, roughness: 1, side: THREE.DoubleSide }));
+  roadMesh.receiveShadow = true;
+  scene.add(roadMesh);
 }
 
 // The Looking Glass: the underwater station. On the surface, only a buoy marks where the cable
