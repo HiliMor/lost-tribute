@@ -1,5 +1,5 @@
 // Terrain math, shared by the terrain mesh, the ocean depth map and everything placed on the island.
-import { ISLAND, islandR, HYDRA, SITES, CLEARINGS } from './layout.js';
+import { islandR, islandPolar, HYDRA, SITES, CLEARINGS } from './layout.js';
 
 export function h2(i, j) { const s = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return s - Math.floor(s); }
 
@@ -24,8 +24,8 @@ export const SLOPE = 0.08;
 // Signed distance to the coast in metres: positive on land, negative at sea.
 export function landDist(x, z) {
   const dSouth = z - shoreZ(x);
-  const dx = x - ISLAND.cx, dz = z - ISLAND.cz;
-  const dIsland = islandR(Math.atan2(dz, dx)) - Math.hypot(dx, dz);
+  const { theta, r } = islandPolar(x, z);
+  const dIsland = islandR(theta) - r;
   const main = Math.min(dSouth, dIsland);
   const hx = x - HYDRA.x, hz = z - HYDRA.z, ht = Math.atan2(hz, hx);
   const dHydra = HYDRA.r + 25 * Math.sin(3 * ht + 1) + 15 * Math.sin(5 * ht) - Math.hypot(hx, hz);
@@ -49,15 +49,15 @@ function terrainRaw(x, z, d) {
   if (inland > 0) {
     // the eastern plateau: a long mountain ridge running north-south
     const xe = 380 + 70 * Math.sin(z * 0.004);
-    h += inland * 230 * Math.exp(-(((x - xe) / 160) ** 2)) * sstep(200, 480, z) * (1 - sstep(1250, 1550, z)) * (0.6 + 0.8 * fbm(x * .01 + 3, z * .01, 4));
+    h += inland * 230 * Math.exp(-(((x - xe) / 160) ** 2)) * sstep(200, 480, z) * (1 - sstep(1450, 1750, z)) * (0.6 + 0.8 * fbm(x * .01 + 3, z * .01, 4));
     // the western plateau
     const xw = -430 + 60 * Math.sin(z * 0.005 + 1);
-    h += inland * 180 * Math.exp(-(((x - xw) / 150) ** 2)) * sstep(350, 600, z) * (1 - sstep(1200, 1450, z)) * (0.6 + 0.8 * fbm(x * .01 + 7, z * .01, 4));
+    h += inland * 180 * Math.exp(-(((x - xw) / 150) ** 2)) * sstep(350, 600, z) * (1 - sstep(1250, 1500, z)) * (0.6 + 0.8 * fbm(x * .01 + 7, z * .01, 4));
     // rolling ground in the central valley
     h += inland * 30 * sstep(100, 400, z) * fbm(x * .006, z * .006, 3);
   }
   // Hydra Island is low and flat compared with the main island
-  if (x > 980) h = h > 0 ? h * (1 - 0.72 * sstep(980, 1060, x)) : h;
+  if (x > 1000) h = h > 0 ? h * (1 - 0.72 * sstep(1000, 1090, x)) : h;
   // the lighthouse cliff on the east coast
   const lh = Math.hypot(x - SITES.lighthouse.x, z - SITES.lighthouse.z);
   if (lh < 400) h += 30 * Math.exp(-((lh / 110) ** 2)) * sstep(-4, 18, d);

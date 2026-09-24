@@ -8,7 +8,7 @@ A fan-made tribute to *LOST*, which premiered on 22 September 2004. It shows the
 
 ## What's in it
 
-- **The whole Island**, laid out after fan-reconstructed maps of the show: the crash beach on the south coast, the western and eastern plateaus with the central valley between them, and Hydra Island offshore
+- **The whole Island**, laid out after [Jonah Adkins' 2010 fan map](https://lostpedia.fandom.com/wiki/Fan_maps) (cross-checked with Choekaas's satellite-style map): the crash beach on the south coast, the Hatch just inland, the Black Rock and the Beechcraft in the middle, Taweret halfway up the west coast, the Temple in the north-west, the Barracks in the north, the Lighthouse on the south-east peninsula and Hydra Island to the east. The island is compressed to about 2 km so it can be explored.
 - **An island map** (press **M**): click a numbered place to fly there. Each place links to the episode it's from:
   1. Crash site, south shore: the Oceanic 815 wreck, signal fire, camp
   2. The Hatch: the Swan station (its light comes on at night)

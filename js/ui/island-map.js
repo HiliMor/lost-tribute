@@ -7,12 +7,12 @@ import { PLACES, OVERVIEW } from './places.js';
 
 // where each label sits relative to its pin: [x, y] in pin radii, and text alignment
 const LABELS = {
-  crash: [1.5, 0.9, 'left'], hatch: [1.5, -0.1, 'left'], beechcraft: [1.5, -0.9, 'left'],
+  crash: [1.5, 0.9, 'left'], hatch: [1.5, -0.1, 'left'], beechcraft: [-1.5, 0.4, 'right'],
   lighthouse: [-1.5, 0, 'right'], hydra: [0, 2.2, 'center'],
 };
 
 // the part of the world the map shows (metres)
-const BOUNDS = { x0: -1080, x1: 1480, z0: -230, z1: 1760 };
+const BOUNDS = { x0: -1150, x1: 1560, z0: -240, z1: 1960 };
 
 function drawMap(canvas) {
   const W = canvas.width, H = canvas.height, g = canvas.getContext('2d');

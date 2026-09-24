@@ -117,7 +117,7 @@ function createPalms(scene) {
   // palms along the rest of the coastline and on Hydra Island, leaning out to sea
   const LH = SITES.lighthouse, ST = SITES.statue;
   for (let i = 0; i < 110; i++) {
-    const th = R(-0.55, 3.7), p = coastPoint(th, R(14, 42));
+    const th = R(-0.95, 3.7), p = coastPoint(th, R(14, 42));
     if (Math.hypot(p.x - LH.x, p.z - LH.z) < 90 || Math.hypot(p.x - ST.x, p.z - ST.z) < 40 || p.z < 60) continue;
     palm(p.x, p.z, R(7, 13), new THREE.Vector3(Math.cos(th), 0, Math.sin(th)), R(0.15, 0.45));
   }
@@ -246,7 +246,7 @@ function createJungle(scene) {
   while (n < N && tries < 160000) {
     tries++;
     const onHydra = tries % 40 === 0;
-    const x = onHydra ? HYDRA.x + R(-190, 190) : R(-1000, 1000), z = onHydra ? HYDRA.z + R(-190, 190) : R(20, 1700);
+    const x = onHydra ? HYDRA.x + R(-190, 190) : R(-1050, 1050), z = onHydra ? HYDRA.z + R(-190, 190) : R(20, 1900);
     const d = landDist(x, z);
     if (d < 30 || inClearing(x, z)) continue;
     const h = terrainH(x, z);

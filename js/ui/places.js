@@ -32,7 +32,7 @@ export const PLACES = [
   {
     id: 'temple', name: 'The Temple', ref: 'Season 6 · "LA X"',
     text: 'An ancient temple behind high stone walls, where the Others took refuge under the protection of the Monster.',
-    site: 'temple', lift: 10, offset: [10, 42, -125],
+    site: 'temple', lift: 10, offset: [85, 38, -95],
   },
   {
     id: 'radio', name: 'The Radio Tower', ref: 'Season 3 · "Through the Looking Glass"',
