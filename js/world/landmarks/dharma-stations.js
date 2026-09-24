@@ -123,6 +123,31 @@ function createFlame(scene, concrete) {
   dish.geometry.translate(0, -4 * Math.cos(Math.PI / 6), 0);   // shallow bowl centred on its rim
   dish.material.side = THREE.DoubleSide;
   dish.position.set(9, 6.2, -2); dish.rotation.set(-0.9, 0, 0.2); g.add(dish);
+  // windows, door, porch posts, chimney
+  const glassM = new THREE.MeshStandardMaterial({ color: 0x20282e, roughness: 0.2, metalness: 0.4 });
+  const trim = new THREE.MeshStandardMaterial({ color: 0xf1ece0, roughness: 0.6 });
+  for (const x of [-3.2, 3.2]) { const w = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 0.08), glassM); w.position.set(x, 2, 4.02); g.add(w); const f = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.4, 0.05), trim); f.position.set(x, 2, 4.0); g.add(f); }
+  for (const z of [-2, 2]) { const w = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.2, 1.4), glassM); w.position.set(5.02, 2, z); g.add(w); }
+  const doorF = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.1), new THREE.MeshStandardMaterial({ color: 0x6d4a2e })); doorF.position.set(-0.9, 1.1, 4.03); g.add(doorF);
+  for (const x of [-2.8, 2.8]) g.add(strut(V(x, 0.3, 6.3), V(x, 3.2, 6.3), 0.08, trim, 6));
+  const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.12, 2.6), new THREE.MeshStandardMaterial({ color: 0x6b3a2a })); porchRoof.position.set(0, 3.3, 5.3); porchRoof.rotation.x = 0.12; g.add(porchRoof);
+  const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2, 0.8), new THREE.MeshStandardMaterial({ color: 0x7e5a44 })); chimney.position.set(-3, 5.6, -1.5); g.add(chimney);
+  // Mikhail's vegetable garden
+  const soilM = new THREE.MeshStandardMaterial({ color: 0x4a3827, roughness: 1 }), vegM = new THREE.MeshStandardMaterial({ color: 0x4f8a34, roughness: 0.8 });
+  for (let r = 0; r < 5; r++) {
+    const bed = new THREE.Mesh(new THREE.BoxGeometry(7, 0.2, 0.8), soilM); bed.position.set(-12, 0.1, -6 + r * 1.4); g.add(bed);
+    for (let k = 0; k < 9; k++) { const p = new THREE.Mesh(new THREE.IcosahedronGeometry(0.28, 0), vegM); p.position.set(-15.2 + k * 0.8, 0.35, -6 + r * 1.4); g.add(p); }
+  }
+  // cows in the pasture ("Enter 77")
+  const hide = [0x1d1b19, 0xece6dc, 0x7a4a2c].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 }));
+  for (let i = 0; i < 4; i++) {
+    const cow = new THREE.Group(), m = hide[i % 3], m2 = hide[(i + 1) % 3];
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2, 0.9, 0.8), m); body.position.y = 1.1; cow.add(body);
+    const patch = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.82), m2); patch.position.set(0.3, 1.2, 0); cow.add(patch);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.4), m); head.position.set(1.2, 1.25, 0); head.rotation.z = -0.3; cow.add(head);
+    for (const [lx, lz] of [[0.7, 0.3], [0.7, -0.3], [-0.7, 0.3], [-0.7, -0.3]]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.7, 0.15), m); leg.position.set(lx, 0.35, lz); cow.add(leg); }
+    cow.position.set(R(-20, 20), 0, R(10, 22)); cow.rotation.y = R(0, 6.28); g.add(cow);
+  }
   // a fence around the pasture
   const post = new THREE.MeshStandardMaterial({ color: 0x6e5a42, roughness: 1 });
   for (let i = 0; i < 26; i++) { const a = i / 26 * Math.PI * 2; g.add(strut(V(Math.cos(a) * 30, 0, Math.sin(a) * 30), V(Math.cos(a) * 30, 1.3, Math.sin(a) * 30), 0.07, post, 5)); }

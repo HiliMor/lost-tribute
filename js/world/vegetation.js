@@ -8,6 +8,7 @@ import {
 import { h2, shoreZ, terrainH, landDist, seaDir, WORLD_BOUNDS } from '../core/terrain-math.js';
 import { SITES, CLEARINGS } from '../core/layout.js';
 import { isPhone, rnd, R, placeOn, shadowy } from '../core/utils.js';
+import { surfaceH } from './terrain.js';
 import { uT, uSunDir, uSunCol, uSunUp, uWind } from '../core/uniforms.js';
 
 function createPalms(scene) {
@@ -255,7 +256,7 @@ function createJungle(scene) {
     const x = onHydra ? SITES.hydra.x + R(-160, 160) : R(WORLD_BOUNDS.x0, WORLD_BOUNDS.x1), z = onHydra ? SITES.hydra.z + R(-160, 160) : R(WORLD_BOUNDS.z0, WORLD_BOUNDS.z1);
     const d = landDist(x, z);
     if (d < 30 || inClearing(x, z)) continue;
-    const h = terrainH(x, z);
+    const h = surfaceH(x, z);
     if (h > 330) continue;
     const s = R(3.5, 8.5) * (d < 45 ? 0.7 : 1);
     ps.set(x, h + s * 0.45, z);

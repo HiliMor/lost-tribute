@@ -4,7 +4,8 @@
 import * as THREE from 'three/webgpu';
 import { vec3, mix, smoothstep, texture, uv, positionLocal, positionWorld, mx_noise_float } from 'three/tsl';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { terrainH, landDist } from '../core/terrain-math.js';
+import { landDist } from '../core/terrain-math.js';
+import { surfaceH } from './terrain.js';
 import { SITES, CLEARINGS } from '../core/layout.js';
 import { isPhone, R, canvasTex } from '../core/utils.js';
 
@@ -186,7 +187,7 @@ export function createJungle(scene) {
     const crowns = new THREE.InstancedMesh(v.crown, leaves, list.length);
     list.forEach(([x, z], i) => {
       const s = R(0.75, 1.2);
-      ps.set(x, terrainH(x, z) - 0.3, z);
+      ps.set(x, surfaceH(x, z) - 0.3, z);
       q.setFromEuler(new THREE.Euler(0, R(0, Math.PI * 2), 0));
       m.compose(ps, q, sc.set(s, s * R(0.9, 1.15), s));
       trunks.setMatrixAt(i, m); crowns.setMatrixAt(i, m);
@@ -203,7 +204,7 @@ export function createJungle(scene) {
   const fernGreens = ['#7aa04a', '#5e8a36', '#8fb055', '#6b8f3e'].map((c) => new THREE.Color(c));
   fernSpots.forEach(([x, z], i) => {
     const s = R(0.6, 1.5);
-    ps.set(x, terrainH(x, z) - 0.05, z);
+    ps.set(x, surfaceH(x, z) - 0.05, z);
     q.setFromEuler(new THREE.Euler(R(-0.1, 0.1), R(0, 6.28), R(-0.1, 0.1)));
     ferns.setMatrixAt(i, m.compose(ps, q, sc.setScalar(s)));
     ferns.setColorAt(i, col.copy(fernGreens[i % 4]).multiplyScalar(R(0.8, 1.15)));
@@ -216,7 +217,7 @@ export function createJungle(scene) {
   const tfCrowns = new THREE.InstancedMesh(treeFernGeo.crown, fernM, tfSpots.length);
   tfSpots.forEach(([x, z], i) => {
     const s = R(0.8, 1.4);
-    ps.set(x, terrainH(x, z) - 0.1, z);
+    ps.set(x, surfaceH(x, z) - 0.1, z);
     q.setFromEuler(new THREE.Euler(R(-0.08, 0.08), R(0, 6.28), R(-0.08, 0.08)));
     m.compose(ps, q, sc.setScalar(s));
     tfTrunks.setMatrixAt(i, m); tfCrowns.setMatrixAt(i, m);

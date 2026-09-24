@@ -23,6 +23,20 @@ export function gridGeometry(xs, zs, yFn) {
   return g;
 }
 
+// The height of the terrain mesh as drawn (its triangles interpolate between grid points, which can
+// differ from terrainH() where the grid is coarse). Use it to set props down on the visible ground.
+let grid = null;
+const cellOf = (arr, v) => { let lo = 0, hi = arr.length - 2; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (arr[m] <= v) lo = m; else hi = m - 1; } return lo; };
+export function surfaceH(x, z) {
+  if (!grid) return terrainH(x, z);
+  const i = cellOf(grid.xs, x), j = cellOf(grid.zs, z);
+  const x0 = grid.xs[i], x1 = grid.xs[i + 1], z0 = grid.zs[j], z1 = grid.zs[j + 1];
+  const u = Math.min(1, Math.max(0, (x - x0) / (x1 - x0))), v = Math.min(1, Math.max(0, (z - z0) / (z1 - z0)));
+  const a = terrainH(x0, z0), b = terrainH(x1, z0), c = terrainH(x0, z1), d = terrainH(x1, z1);
+  // the grid's two triangles per cell (a, c, b) and (b, c, d)
+  return u + v <= 1 ? a + (b - a) * u + (c - a) * v : d + (c - d) * (1 - u) + (b - d) * (1 - v);
+}
+
 export function createTerrain(scene) {
   const xs = [], zs = [];
   // dense near the crash beach, coarser towards the far side of the island
@@ -39,6 +53,7 @@ export function createTerrain(scene) {
   zs.push(...spread(420, z0, z1, 300));
   const g = gridGeometry(xs, zs, terrainH);
   g.computeVertexNormals();
+  grid = { xs, zs };
 
   // vertex colours: wet sand, dry sand, beach grass, jungle floor, rock
   const p = g.attributes.position, nrm = g.attributes.normal;

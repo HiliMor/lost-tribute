@@ -3,10 +3,14 @@
 import * as THREE from 'three/webgpu';
 import { SITES } from '../../core/layout.js';
 import { terrainH } from '../../core/terrain-math.js';
+import { surfaceH } from '../terrain.js';
 import { R, shadowy } from '../../core/utils.js';
 import { woodMaterial, strut } from './materials.js';
 
 const L = 38, B = 10, D = 7;
+// the ship's yaw, and the compass direction its holed starboard side faces
+const YAW = -1.02 + Math.PI;
+export const HOLE_SIDE = YAW;
 
 // hull cross-section at station s (0 = stern, 1 = bow)
 const halfWidth = (s) => B / 2 * Math.pow(Math.max(0.03, 1 - Math.pow(Math.abs(s * 2 - 1.1) / 1.1, 2.2)), 0.45);
@@ -111,9 +115,42 @@ export function createBlackRock(scene) {
     ship.add(leaf);
   }
 
+  // the hold's cargo spilled onto the ground: crates of old dynamite packed in straw ("Exodus"),
+  // barrels and the rusted chains and shackles of the slaves
+  const crateM = new THREE.MeshStandardMaterial({ color: 0xa58658, roughness: 1 });
+  const straw = new THREE.MeshStandardMaterial({ color: 0xb59a5a, roughness: 1 });
+  const stick = new THREE.MeshStandardMaterial({ color: 0xc8402c, roughness: 0.7 });
+  const iron = new THREE.MeshStandardMaterial({ color: 0x3a2a22, metalness: 0.6, roughness: 0.7 });
+  const cargo = new THREE.Group();
+  for (let i = 0; i < 7; i++) {
+    const c = new THREE.Group();
+    const box = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.75, 1), crateM); box.position.y = 0.37; c.add(box);
+    if (i % 2 === 0) {
+      const fill = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.08, 0.85), straw); fill.position.y = 0.72; c.add(fill);
+      for (let k = 0; k < 5; k++) { const d = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.4, 6), stick); d.rotation.z = Math.PI / 2; d.position.set(R(-0.4, 0.4), 0.8, R(-0.3, 0.3)); c.add(d); }
+    }
+    c.position.set(R(-8, 8), 0, R(9, 16)); c.rotation.set(R(-0.1, 0.1), R(0, 6.28), R(-0.15, 0.15)); cargo.add(c);
+  }
+  for (let i = 0; i < 5; i++) {
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 1, 12), crateM);
+    barrel.position.set(R(-10, 10), 0.5, R(8, 18)); if (i % 2) { barrel.rotation.z = Math.PI / 2; barrel.position.y = 0.45; } cargo.add(barrel);
+  }
+  for (let i = 0; i < 4; i++) {
+    const x0 = R(-6, 6), z0 = R(10, 15);
+    for (let k = 0; k < 10; k++) { const link = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.025, 5, 10), iron); link.position.set(x0 + k * 0.13, 0.05, z0 + Math.sin(k) * 0.1); link.rotation.set(Math.PI / 2, k % 2 ? Math.PI / 2 : 0, 0); cargo.add(link); }
+  }
+  cargo.position.set(site.x, 0, site.z); cargo.rotation.y = HOLE_SIDE;   // spilled out of the hole
+  // set each piece down on the ground as drawn
+  const up = new THREE.Vector3(0, 1, 0);
+  for (const c of cargo.children) {
+    const w = c.position.clone().applyAxisAngle(up, HOLE_SIDE);
+    c.position.y += surfaceH(site.x + w.x, site.z + w.z);
+  }
+  scene.add(shadowy(cargo));
+
   // tilted over on its side, keel buried in the jungle floor
   // broadside (and the hole) turned towards the low afternoon sun
-  ship.rotation.set(0.05, -1.02 + Math.PI, 0.22, 'YXZ');
+  ship.rotation.set(0.05, YAW, 0.22, 'YXZ');
   ship.position.set(site.x, terrainH(site.x, site.z) + 4.6, site.z);
   scene.add(shadowy(ship));
   return ship;

@@ -44,7 +44,7 @@ export const PLACES = [
   {
     id: 'blackRock', season: 1, name: 'The Black Rock', ref: 'Season 1 · "Exodus"',
     text: 'A 19th-century slaving ship, stranded far inland. Its crates of old dynamite were used to blow open the hatch.',
-    site: 'blackRock', lift: 4, dist: 55, rise: 14,
+    site: 'blackRock', lift: 2, dist: 34, rise: 13, face: 2.12,
   },
   {
     id: 'radio', season: 1, name: 'The Radio Tower', ref: 'Season 1 · "Pilot" · Season 3',
@@ -84,7 +84,7 @@ export const PLACES = [
   {
     id: 'barracks', season: 3, name: 'The Barracks', ref: 'Season 3 · "A Tale of Two Cities"',
     text: "The DHARMA Initiative's village of small houses, later home to the Others. The sonic fence kept the jungle out.",
-    site: 'barracks', lift: 3, dist: 190, rise: 80,
+    site: 'barracks', lift: 3, dist: 110, rise: 38,
   },
   {
     id: 'hydra', season: 3, name: 'Hydra Island', ref: 'Season 3 · "A Tale of Two Cities"',
@@ -146,7 +146,7 @@ function blocked(from, to, clearR) {
   const len = Math.hypot(to.x - from.x, to.z - from.z);
   for (let i = 1; i < 32; i++) {
     const u = i / 32, x = from.x + (to.x - from.x) * u, z = from.z + (to.z - from.z) * u;
-    const trees = (1 - u) * len > clearR ? 11 : 1;
+    const trees = (1 - u) * len > clearR ? 24 : 1;   // the tallest jungle crowns reach about 24 m
     worst = Math.max(worst, terrainH(x, z) + trees - (from.y + (to.y - from.y) * u));
   }
   return worst;
@@ -172,6 +172,12 @@ export function viewFor(place) {
     from.y = place.height;
     return { from, to };
   }
+  if (place.face !== undefined) {
+    // look from a set direction (e.g. the side of a landmark with the most to see)
+    const from = new THREE.Vector3(s.x + Math.sin(place.face) * place.dist, 0, s.z + Math.cos(place.face) * place.dist);
+    from.y = Math.max(to.y + place.rise, terrainH(from.x, from.z) + 6);
+    return { from, to };
+  }
   if (place.front) {
     // look at the landmark's front, which faces downhill towards the sea
     const f = seaDir(s.x, s.z), from = new THREE.Vector3(s.x + f.x * place.dist, 0, s.z + f.z * place.dist);
@@ -187,7 +193,7 @@ export function viewFor(place) {
     // stay above the treetops, unless the camera stands inside the landmark's own clearing
     const clearing = CLEARINGS.find((c) => c.site === place.site);
     const inClearing = clearing && place.dist < clearing.r * 0.8;
-    from.y = Math.max(to.y + place.rise, terrainH(from.x, from.z) + (inClearing ? 2.5 : 22));
+    from.y = Math.max(to.y + place.rise, terrainH(from.x, from.z) + (inClearing ? 2.5 : 32));
     const score = blocked(from, to, inClearing ? place.dist + 1 : place.clear ?? 30) * 10 + (from.y - to.y - place.rise) - (dx * sun.x + dz * sun.y) * 4;
     if (!best || score < best.score) best = { score, from };
   }
