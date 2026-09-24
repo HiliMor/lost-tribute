@@ -110,37 +110,69 @@ function createCaves(scene) {
   scene.add(shadowy(g));
 }
 
-// Hurley's golf course, built from luggage and found clubs ("Solitary", season 1).
+// Hurley's golf course ("Solitary", season 1): a fairway mown out of the jungle with three holes,
+// flags cut from luggage, a sand trap, clubs and a scorecard table made from a suitcase.
 function createGolf(scene) {
   const g = new THREE.Group();
-  const green = new THREE.Mesh(new THREE.CircleGeometry(9, 32), new THREE.MeshStandardMaterial({ color: 0x5f8f38, roughness: 0.85 }));
-  green.rotation.x = -Math.PI / 2; green.position.y = 0.06; g.add(green);
+  const fairway = new THREE.Mesh(new THREE.CircleGeometry(1, 40), new THREE.MeshStandardMaterial({ color: 0x6a9a3c, roughness: 0.9 }));
+  fairway.rotation.x = -Math.PI / 2; fairway.scale.set(30, 13, 1); fairway.position.y = 0.05; g.add(fairway);
+  const greenM = new THREE.MeshStandardMaterial({ color: 0x7fb24a, roughness: 0.75 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
+  const flags = [0xc8231f, 0xf0c64a, 0x2f5d9c].map((c) => new THREE.MeshStandardMaterial({ color: c, side: THREE.DoubleSide }));
+  [[-20, -3], [3, 6], [21, -2]].forEach(([x, z], i) => {
+    const green = new THREE.Mesh(new THREE.CircleGeometry(5.5, 32), greenM); green.rotation.x = -Math.PI / 2; green.position.set(x, 0.08, z); g.add(green);
+    const hole = new THREE.Mesh(new THREE.CircleGeometry(0.18, 12), new THREE.MeshBasicMaterial({ color: 0x080808 }));
+    hole.rotation.x = -Math.PI / 2; hole.position.set(x, 0.1, z); g.add(hole);
+    g.add(strut(V(x, 0, z), V(x, 2.4, z), 0.03, white, 5));
+    const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.6), flags[i]); flag.position.set(x + 0.45, 2.1, z); g.add(flag);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), white); ball.position.set(x + R(-2, 2), 0.14, z + R(-2, 2)); g.add(ball);
+  });
   const bunker = new THREE.Mesh(new THREE.CircleGeometry(4, 24), new THREE.MeshStandardMaterial({ color: 0xd9c89c, roughness: 1 }));
-  bunker.rotation.x = -Math.PI / 2; bunker.scale.x = 1.6; bunker.position.set(11, 0.05, 4); g.add(bunker);
-  const hole = new THREE.Mesh(new THREE.CircleGeometry(0.2, 12), new THREE.MeshBasicMaterial({ color: 0x0a0a0a }));
-  hole.rotation.x = -Math.PI / 2; hole.position.set(1, 0.08, -1); g.add(hole);
-  g.add(strut(V(1, 0, -1), V(1, 2.4, -1), 0.03, new THREE.MeshStandardMaterial({ color: 0xeeeeee }), 5));
-  const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.6), new THREE.MeshStandardMaterial({ color: 0xc8231f, side: THREE.DoubleSide }));
-  flag.position.set(1.45, 2.1, -1); g.add(flag);
-  // a golf bag made from a suitcase
-  const bag = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, 0.35), new THREE.MeshStandardMaterial({ color: 0x1f3b5a })); bag.position.set(-6, 0.5, 5); bag.rotation.z = 0.2; g.add(bag);
+  bunker.rotation.x = -Math.PI / 2; bunker.scale.x = 1.6; bunker.position.set(12, 0.07, 6); g.add(bunker);
+  // the clubhouse: a suitcase table, a golf bag and clubs leaning on it
+  const suit = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.55), new THREE.MeshStandardMaterial({ color: 0x6b4a2b })); suit.position.set(-12, 0.25, 9); g.add(suit);
+  const bag = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.95, 10), new THREE.MeshStandardMaterial({ color: 0x1f3b5a })); bag.position.set(-11.2, 0.5, 9.2); bag.rotation.z = 0.25; g.add(bag);
+  const steel = new THREE.MeshStandardMaterial({ color: 0xbfc3c6, metalness: 0.8, roughness: 0.3 });
+  for (let i = 0; i < 4; i++) g.add(strut(V(-11.3 + i * 0.05, 0.9, 9.2), V(-11.1 + i * 0.12, 1.5, 9.25), 0.015, steel, 4));
   const s = SITES.golf;
-  g.position.set(s.x, ground(s), s.z);
+  g.position.set(s.x, ground(s), s.z); g.rotation.y = 0.4;
   scene.add(shadowy(g));
 }
 
-// Rousseau's shelter, where she held Sayid ("Solitary", season 1).
+// Rousseau's shelter ("Solitary", season 1): a lean-to of salvaged tarps and bamboo, her cot, a cooking
+// fire, maps and notes pinned to a board, and the traps around her camp: a sharpened-stake fence and a
+// net snare hanging from a tree.
 function createRousseau(scene) {
   const g = new THREE.Group();
   const wood = new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 1 });
+  const bamboo = new THREE.MeshStandardMaterial({ color: 0x9c8a4a, roughness: 0.8 });
   const tarp = new THREE.MeshStandardMaterial({ color: 0x5e6440, roughness: 0.9, side: THREE.DoubleSide });
-  for (const [x, z] of [[-2, -2], [2, -2], [2, 2], [-2, 2]]) g.add(strut(V(x, 0, z), V(x, 2.4, z), 0.08, wood, 5));
-  const roof = new THREE.Mesh(gableRoof(5, 5, 1.2), tarp); roof.position.y = 2.4; g.add(roof);
-  const cot = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 2), wood); cot.position.set(-1, 0.25, 0); g.add(cot);
-  // her traps: sharpened stakes around the camp
-  for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2; g.add(strut(V(Math.cos(a) * 7, 0, Math.sin(a) * 7), V(Math.cos(a) * 7.6, 1.2, Math.sin(a) * 7.6), 0.05, wood, 4)); }
+  for (const [x, z] of [[-2.5, -2], [2.5, -2], [2.5, 2], [-2.5, 2]]) g.add(strut(V(x, 0, z), V(x, z < 0 ? 3 : 2, z), 0.08, bamboo, 6));
+  const roof = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 4.6), tarp); roof.rotation.x = -Math.PI / 2 + 0.22; roof.position.y = 2.55; g.add(roof);
+  const backWall = new THREE.Mesh(new THREE.PlaneGeometry(5, 3), new THREE.MeshStandardMaterial({ color: 0x6f6a4a, roughness: 1, side: THREE.DoubleSide }));
+  backWall.position.set(0, 1.5, -2); g.add(backWall);
+  for (let i = 0; i < 12; i++) g.add(strut(V(-2.5 + i * 0.45, 0, -2.05), V(-2.5 + i * 0.45, 2.9, -2.05), 0.05, bamboo, 5));   // woven bamboo
+  const cot = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.45, 2), wood); cot.position.set(-1.4, 0.23, 0); g.add(cot);
+  const blanket = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.06, 1.6), new THREE.MeshStandardMaterial({ color: 0x7a3b2a })); blanket.position.set(-1.4, 0.48, 0.1); g.add(blanket);
+  // her maps and notes
+  const notes = canvasTex(256, 128, (c, W, H) => {
+    c.fillStyle = '#5a4a36'; c.fillRect(0, 0, W, H);
+    for (let i = 0; i < 7; i++) { c.fillStyle = ['#e6dcc2', '#d8cba6', '#efe6cf'][i % 3]; c.save(); c.translate(20 + i * 33, 20 + (i % 2) * 40); c.rotate(R(-0.2, 0.2)); c.fillRect(0, 0, 40, 50); c.strokeStyle = '#3a3028'; c.lineWidth = 1; for (let l = 0; l < 6; l++) { c.beginPath(); c.moveTo(4, 8 + l * 7); c.lineTo(34, 8 + l * 7); c.stroke(); } c.restore(); }
+  });
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(2, 1), new THREE.MeshStandardMaterial({ map: notes, roughness: 0.9 })); board.position.set(0.9, 1.6, -1.95); g.add(board);
+  // fire and pot
+  const fire = new THREE.Mesh(new THREE.CircleGeometry(0.5, 12), new THREE.MeshStandardMaterial({ color: 0x1c1a18 })); fire.rotation.x = -Math.PI / 2; fire.position.set(1.5, 0.06, 3.2); g.add(fire);
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.2, 0.3, 10), new THREE.MeshStandardMaterial({ color: 0x3a3a3a, metalness: 0.5 })); pot.position.set(1.5, 0.3, 3.2); g.add(pot);
+  // stake fence traps
+  for (let i = 0; i < 26; i++) { const a = i / 26 * Math.PI * 2; g.add(strut(V(Math.cos(a) * 8, 0, Math.sin(a) * 8), V(Math.cos(a) * 8.7, 1.3, Math.sin(a) * 8.7), 0.05, wood, 4)); }
+  // a net snare slung between two posts
+  g.add(strut(V(5, 0, -5), V(5, 4.5, -5), 0.12, wood, 6)); g.add(strut(V(8, 0, -3), V(8, 4.5, -3), 0.12, wood, 6));
+  g.add(strut(V(5, 4.4, -5), V(8, 4.4, -3), 0.03, wood, 4));
+  const net = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 6), new THREE.MeshStandardMaterial({ color: 0x6b5a3a, wireframe: true }));
+  net.scale.y = 1.3; net.position.set(6.5, 2.8, -4); g.add(net);
+  g.add(strut(V(6.5, 4.4, -4), V(6.5, 3.9, -4), 0.02, wood, 4));
   const s = SITES.rousseau;
-  g.position.set(s.x, ground(s), s.z);
+  g.position.set(s.x, ground(s), s.z); g.rotation.y = 0.7;
   scene.add(shadowy(g));
 }
 
@@ -200,19 +232,31 @@ function createTail(scene) {
   scene.add(shadowy(debris));
 }
 
-// Henry Gale's balloon, caught in the trees where the real Henry Gale was buried ("The Whole Truth", season 2).
+// Henry Gale's balloon ("The Whole Truth", season 2): the striped envelope caught in the trees, the wicker
+// basket tipped on its side with its burner, and the real Henry Gale's grave with a wooden marker.
 function createBalloon(scene) {
   const g = new THREE.Group();
-  const stripes = canvasTex(256, 256, (c, W) => { for (let i = 0; i < 8; i++) { c.fillStyle = i % 2 ? '#d8b23a' : '#b4312a'; c.fillRect(i * W / 8, 0, W / 8, W); } });
-  const env = new THREE.Mesh(new THREE.SphereGeometry(5, 24, 14), new THREE.MeshStandardMaterial({ map: stripes, roughness: 0.8, side: THREE.DoubleSide }));
-  const ep = env.geometry.attributes.position;
-  for (let i = 0; i < ep.count; i++) { const y = ep.getY(i); ep.setY(i, y * 0.35 + Math.sin(ep.getX(i) * 0.7) * 0.8); }
-  env.geometry.computeVertexNormals();
+  const stripes = canvasTex(256, 256, (c, W) => { for (let i = 0; i < 8; i++) { c.fillStyle = i % 2 ? '#d8b23a' : '#b4312a'; c.fillRect(i * W / 8, 0, W / 8, W); } c.fillStyle = 'rgba(40,30,20,.35)'; for (let i = 0; i < 60; i++) c.fillRect(Math.random() * W, Math.random() * W, 2 + Math.random() * 20, 1 + Math.random() * 3); });
+  const envGeo = new THREE.SphereGeometry(5, 32, 18);
+  const ep = envGeo.attributes.position;
+  for (let i = 0; i < ep.count; i++) { const x = ep.getX(i), y = ep.getY(i), z = ep.getZ(i); ep.setXYZ(i, x * (1 + 0.1 * Math.sin(y * 2)), y * 0.35 + Math.sin(x * 0.7) * 0.8 + Math.sin(z * 1.3) * 0.4, z); }
+  envGeo.computeVertexNormals();
+  const env = new THREE.Mesh(envGeo, new THREE.MeshStandardMaterial({ map: stripes, roughness: 0.8, side: THREE.DoubleSide }));
   env.position.y = 9; env.rotation.z = 0.4; g.add(env);
-  const basket = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1, 1.4), new THREE.MeshStandardMaterial({ color: 0x8a6a3e, roughness: 1 }));
-  basket.position.set(3, 0.5, 2); basket.rotation.z = 0.3; g.add(basket);
+  // the fabric hanging down where it snagged
+  const drape = new THREE.Mesh(new THREE.PlaneGeometry(3, 5, 4, 6), env.material);
+  const dp = drape.geometry.attributes.position; for (let i = 0; i < dp.count; i++) dp.setZ(i, Math.sin(dp.getY(i) * 1.3) * 0.4);
+  drape.position.set(-3.5, 6.5, 1); drape.rotation.y = 0.8; g.add(drape);
+  const wicker = new THREE.MeshStandardMaterial({ color: 0x8a6a3e, roughness: 1 });
+  const basket = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.1, 1.4), wicker); basket.position.set(3, 0.55, 2); basket.rotation.set(0, 0.3, 1.3); g.add(basket);
+  const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.4, 10), new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.8 })); burner.position.set(4, 1, 2.5); burner.rotation.z = 1.3; g.add(burner);
   const rope = new THREE.MeshStandardMaterial({ color: 0x3a3325 });
-  for (const dx of [-0.6, 0.6]) g.add(strut(V(3 + dx, 1, 2), V(1 + dx, 7.5, 0), 0.03, rope, 4));
+  for (const dx of [-0.6, 0, 0.6]) g.add(strut(V(3 + dx, 1, 2), V(1 + dx, 7.5, 0), 0.03, rope, 4));
+  // the grave: a mound, a cross of branches and a stone
+  const soil = new THREE.MeshStandardMaterial({ color: 0x4a3a28, roughness: 1 });
+  const mound = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), soil); mound.scale.set(0.8, 0.25, 1.4); mound.position.set(-4, 0, -4); g.add(mound);
+  const wood = new THREE.MeshStandardMaterial({ color: 0x5e4a36, roughness: 1 });
+  g.add(strut(V(-4, 0, -5.6), V(-4, 1.3, -5.6), 0.05, wood, 5)); g.add(strut(V(-4.4, 1, -5.6), V(-3.6, 1, -5.6), 0.04, wood, 5));
   const s = SITES.balloon;
   g.position.set(s.x, ground(s), s.z);
   scene.add(shadowy(g));
@@ -253,13 +297,40 @@ function createJacobsCabin(scene) {
   scene.add(shadowy(g));
 }
 
-// Jacob's cave on the south coast, with the candidates' names on its ceiling ("The Substitute", season 6).
+// Jacob's cave on the south coast ("The Substitute", season 6): a cave in the sea cliffs. On a rock at its
+// mouth stand Jacob's scales with a white stone and a black stone; on the ceiling, the candidates' names.
 function createJacobsCave(scene) {
   const g = new THREE.Group();
-  const rock = stoneMaterial('#4c4640', { moss: 0.2, scale: 0.35 });
-  rockPile(g, rock, 16, 13, 7, -1);
-  const mouth = new THREE.Mesh(new THREE.CircleGeometry(3.5, 20), new THREE.MeshBasicMaterial({ color: 0x040302 }));
-  mouth.scale.y = 0.75; mouth.position.set(0, 2.2, 7.2); g.add(mouth);
+  const rock = stoneMaterial('#6f665c', { moss: 0.25, scale: 0.35 });
+  for (let i = 0; i < 18; i++) {
+    const r = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 1), rock);
+    const x = R(-13, 13);
+    r.position.set(x, R(0, 8), R(-9, -3) - Math.abs(x) * 0.2);
+    r.scale.set(R(2.5, 5), R(2.5, 4.5), R(2.5, 4.5)); r.rotation.set(R(0, 6), R(0, 6), R(0, 6));
+    g.add(r);
+  }
+  const tunnel = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 9, 20, 1, true, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x050403, side: THREE.DoubleSide }));
+  tunnel.rotation.set(Math.PI / 2, 0, Math.PI / 2); tunnel.position.set(0, 0, -4); g.add(tunnel);
+  // the names and numbers, chalked on the arch above the mouth
+  const names = canvasTex(512, 128, (c, W, H) => {
+    c.fillStyle = '#2b2622'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#d9d2c2'; c.font = '600 15px Georgia, serif';
+    const list = ['4 LOCKE', '8 REYES', '15 FORD', '16 JARRAH', '23 SHEPHARD', '42 KWON', 'AUSTEN', 'LITTLETON', 'STRAUME', 'PACE', 'ROUSSEAU', 'LINUS'];
+    // everyone but the six remaining candidates is crossed out
+    list.forEach((n, i) => { c.save(); c.translate(20 + (i % 6) * 82, 38 + Math.floor(i / 6) * 48); c.rotate(R(-0.15, 0.15)); c.fillText(n, 0, 0); if (i >= 6) { c.strokeStyle = '#d9d2c2'; c.beginPath(); c.moveTo(-2, -5); c.lineTo(c.measureText(n).width + 2, -5); c.stroke(); } c.restore(); });
+  });
+  const plaque = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5), new THREE.MeshStandardMaterial({ map: names, roughness: 1 }));
+  plaque.position.set(0, 3.4, -1.2); plaque.rotation.x = 0.35; g.add(plaque);
+  // Jacob's scales
+  const brass = new THREE.MeshStandardMaterial({ color: 0xb08a3e, metalness: 0.85, roughness: 0.35 });
+  const stand = new THREE.Mesh(new THREE.DodecahedronGeometry(0.7, 0), rock); stand.position.set(2.6, 0.4, 1.5); g.add(stand);
+  g.add(strut(V(2.6, 0.9, 1.5), V(2.6, 2.1, 1.5), 0.03, brass, 6));
+  g.add(strut(V(2.0, 2.05, 1.5), V(3.2, 2.15, 1.5), 0.025, brass, 6));
+  for (const [x, y, c] of [[2.0, 1.75, 0xf2efe6], [3.2, 1.85, 0x111111]]) {
+    const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.12, 0.05, 14), brass); pan.position.set(x, y, 1.5); g.add(pan);
+    g.add(strut(V(x, y, 1.5), V(x, y + 0.3, 1.5), 0.008, brass, 3));
+    const stone = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshStandardMaterial({ color: c, roughness: 0.3 })); stone.position.set(x, y + 0.07, 1.5); g.add(stone);
+  }
   const p = toCoastDistance(SITES.jacobsCave, 10), sea = seaDir(p.x, p.z);
   g.position.set(p.x, terrainH(p.x, p.z) - 0.5, p.z);
   g.rotation.y = Math.atan2(sea.x, sea.z);

@@ -31,26 +31,60 @@ function place(g, site, yOff = 0, face) {
   if (face !== undefined) g.rotation.y = face;
 }
 
-// The Pearl: a small concrete entrance in a field, with a hatch in its floor ("?", season 2).
+// The Pearl ("?", season 2): the station's entrance is a hatch in an open meadow, a round concrete
+// collar with its steel lid thrown open and a lit ladder shaft below. Around it lie the Virgin Mary
+// statues full of heroin that spilled from the Beechcraft.
 function createPearl(scene, concrete, dark) {
   const g = new THREE.Group();
-  const hut = new THREE.Mesh(new THREE.BoxGeometry(4, 2.6, 4), concrete); hut.position.y = 1.2; g.add(hut);
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.3, 4.6), concrete); roof.position.y = 2.6; g.add(roof);
-  const door = new THREE.Mesh(new THREE.BoxGeometry(1.3, 2, 0.1), dark); door.position.set(0, 1, 2.02); g.add(door);
-  const logo = logoPlate('◯', 0.9); logo.position.set(0, 2.15, 2.03); g.add(logo);
-  place(g, SITES.pearl, -0.1, 0.8);
+  const collar = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.7, 0.5, 8), concrete); collar.position.y = 0.1; g.add(collar);
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 4, 16, 1, true), new THREE.MeshStandardMaterial({ color: 0x2a2c2d, side: THREE.BackSide }));
+  shaft.position.y = -1.7; g.add(shaft);
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(0.95, 16), new THREE.MeshBasicMaterial({ color: 0xd8ecff }));
+  glow.rotation.x = -Math.PI / 2; glow.position.y = -3.6; g.add(glow);
+  const steel = new THREE.MeshStandardMaterial({ color: 0x6d7275, metalness: 0.75, roughness: 0.4 });
+  for (let i = 0; i < 7; i++) { const rung = strut(V(-0.5, -0.4 - i * 0.45, 0.85), V(0.5, -0.4 - i * 0.45, 0.85), 0.03, steel, 4); g.add(rung); }
+  const lid = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.12, 16), steel);
+  lid.position.set(0, 1.25, -1.35); lid.rotation.x = -1.2; g.add(lid);
+  const logo = logoPlate('◯', 0.9); logo.position.set(0, 1.32, -1.28); logo.rotation.x = -1.2 + Math.PI / 2; g.add(logo);
+  // Virgin Mary statues (white robes, blue mantles), some broken open
+  const white = new THREE.MeshStandardMaterial({ color: 0xece6d8, roughness: 0.5 });
+  const blue = new THREE.MeshStandardMaterial({ color: 0x4b6fa8, roughness: 0.5 });
+  for (let i = 0; i < 9; i++) {
+    const m = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.55, 10), blue); body.position.y = 0.28; m.add(body);
+    const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.13, 0.4, 10), white); robe.position.y = 0.25; m.add(robe);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), white); head.position.y = 0.6; m.add(head);
+    m.position.set(R(-6, 6), 0.05, R(-6, 6));
+    if (Math.hypot(m.position.x, m.position.z) < 2.2) m.position.x += 3;
+    if (i % 3 === 0) m.rotation.set(Math.PI / 2, R(0, 6), 0); else m.rotation.y = R(0, 6);
+    g.add(m);
+  }
+  place(g, SITES.pearl, -0.05, 0.8);
   scene.add(shadowy(g));
+  glow.castShadow = false;
 }
 
-// The Staff: a medical station behind a metal door set into a hillside ("Maternity Leave", season 2).
+// The Staff ("Maternity Leave", season 2): the DHARMA medical station, reached through a steel door
+// in a vine-covered hillside, down a short concrete ramp between retaining walls.
 function createStaff(scene, concrete, dark) {
   const g = new THREE.Group();
-  const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(7, 1), new THREE.MeshStandardMaterial({ color: 0x3a4a26, roughness: 0.95, flatShading: true }));
-  rock.scale.set(1.3, 0.8, 1); rock.position.set(0, 1.5, -4); g.add(rock);
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(3.4, 3, 1), concrete); frame.position.set(0, 1.5, 2.4); g.add(frame);
-  const door = new THREE.Mesh(new THREE.BoxGeometry(2, 2.3, 0.1), new THREE.MeshStandardMaterial({ color: 0x5b6166, metalness: 0.7, roughness: 0.45 }));
-  door.position.set(0, 1.2, 2.92); g.add(door);
-  const logo = logoPlate('✚', 0.8); logo.position.set(0, 2.65, 2.93); g.add(logo);
+  const hill = stoneMaterial('#495a2c', { moss: 0.7, scale: 0.4 });
+  for (let i = 0; i < 7; i++) {
+    const r = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 1), hill);
+    r.position.set(R(-7, 7), R(0.5, 3), R(-8, -4)); r.scale.set(R(3, 5), R(2.5, 4), R(3, 4.5)); r.rotation.set(R(0, 6), R(0, 6), R(0, 6));
+    g.add(r);
+  }
+  // concrete portal, ramp and retaining walls
+  const portal = new THREE.Mesh(new THREE.BoxGeometry(4.2, 3.4, 1.2), concrete); portal.position.set(0, 1.6, -1.2); g.add(portal);
+  const ramp = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.2, 6), concrete); ramp.position.set(0, -0.15, 2.3); ramp.rotation.x = -0.08; g.add(ramp);
+  for (const x of [-1.6, 1.6]) { const w = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.2, 5.5), concrete); w.position.set(x, 0.4, 2.2); g.add(w); }
+  const door = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.4, 0.12), new THREE.MeshStandardMaterial({ color: 0x5b6166, metalness: 0.7, roughness: 0.45 }));
+  door.position.set(0, 1.2, -0.56); g.add(door);
+  const keypad = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.06), dark); keypad.position.set(1.5, 1.3, -0.58); g.add(keypad);
+  const logo = logoPlate('✚', 0.9); logo.position.set(0, 2.8, -0.58); g.add(logo);
+  // vines hanging over the portal
+  const vine = new THREE.MeshStandardMaterial({ color: 0x2f4a1c, roughness: 0.9 });
+  for (let i = 0; i < 14; i++) { const x = R(-2, 2), len = R(0.6, 2.2); g.add(strut(V(x, 3.3, -0.55), V(x + R(-0.2, 0.2), 3.3 - len, -0.5), 0.04, vine, 4)); }
   place(g, SITES.staff, -0.3, 2.2);
   scene.add(shadowy(g));
 }
@@ -96,21 +130,42 @@ function createFlame(scene, concrete) {
   scene.add(shadowy(g));
 }
 
-// The Orchid: a glass greenhouse on top of the station where Ben moved the Island
-// ("There's No Place Like Home", season 4).
+// The Orchid ("There's No Place Like Home", season 4): a white-framed glass greenhouse, the station's
+// cover story, on a concrete base. Inside are potting benches with orchids; below it, Ben turned the wheel.
 function createOrchid(scene, concrete) {
   const g = new THREE.Group();
-  const base = new THREE.Mesh(new THREE.BoxGeometry(12, 1, 7), concrete); base.position.y = 0.5; g.add(base);
-  const glass = new THREE.MeshStandardMaterial({ color: 0xd5ead8, roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.35 });
-  const house = new THREE.Mesh(new THREE.BoxGeometry(11, 3, 6), glass); house.position.y = 2.5; g.add(house);
-  const roof = new THREE.Mesh(gableRoof(11.2, 6.2, 1.8), glass); roof.rotation.y = Math.PI / 2; roof.scale.set(6.2 / 11.2, 1, 11.2 / 6.2); roof.position.y = 4; g.add(roof);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(12.4, 0.8, 7.4), concrete); base.position.y = 0.4; g.add(base);
+  const glass = new THREE.MeshStandardMaterial({ color: 0xdbeee0, roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.28, depthWrite: false });
+  const walls = new THREE.Mesh(new THREE.BoxGeometry(11.6, 3, 6.6), glass); walls.position.y = 2.3; g.add(walls);
+  const roofGeo = gableRoof(6.6, 11.6, 2); roofGeo.rotateY(Math.PI / 2);
+  const roof = new THREE.Mesh(roofGeo, glass); roof.position.y = 3.8; g.add(roof);
   const frame = new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.5 });
-  for (let x = -5.5; x <= 5.51; x += 1.1) for (const z of [-3, 3]) g.add(strut(V(x, 1, z), V(x, 4, z), 0.05, frame, 4));
-  const plants = new THREE.MeshStandardMaterial({ color: 0x3f7a2c, roughness: 0.9 });
-  for (let i = 0; i < 14; i++) { const p = new THREE.Mesh(new THREE.IcosahedronGeometry(R(0.3, 0.6), 1), plants); p.position.set(R(-5, 5), 1.3, R(-2.5, 2.5)); g.add(p); }
+  // posts, sills, eaves and rafters
+  for (let x = -5.8; x <= 5.81; x += 1.16) {
+    for (const z of [-3.3, 3.3]) g.add(strut(V(x, 0.8, z), V(x, 3.8, z), 0.05, frame, 4));
+    g.add(strut(V(x, 3.8, -3.3), V(x, 5.8, 0), 0.05, frame, 4)); g.add(strut(V(x, 3.8, 3.3), V(x, 5.8, 0), 0.05, frame, 4));
+  }
+  for (const [y, z] of [[0.8, -3.3], [0.8, 3.3], [3.8, -3.3], [3.8, 3.3], [5.8, 0], [2.3, -3.3], [2.3, 3.3]]) g.add(strut(V(-5.8, y, z), V(5.8, y, z), 0.05, frame, 4));
+  for (const x of [-5.8, 5.8]) for (let z = -3.3; z <= 3.31; z += 1.1) g.add(strut(V(x, 0.8, z), V(x, 3.8, z), 0.05, frame, 4));
+  // door at one end
+  const door = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.2, 1.2), new THREE.MeshStandardMaterial({ color: 0xf2f2ee, transparent: true, opacity: 0.6 }));
+  door.position.set(5.82, 1.9, 0); g.add(door);
+  // benches of orchids
+  const bench = new THREE.MeshStandardMaterial({ color: 0x7a6248, roughness: 0.9 });
+  const leaf = new THREE.MeshStandardMaterial({ color: 0x3f7a2c, roughness: 0.8 });
+  const blooms = [0xf3e9f7, 0xd65a9a, 0xf0c64a, 0xffffff].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 }));
+  for (const z of [-2.2, 0, 2.2]) {
+    const top = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.12, 1.1), bench); top.position.set(0, 1.7, z); g.add(top);
+    for (let x = -4.3; x <= 4.31; x += 0.55) {
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.1, 0.2, 8), new THREE.MeshStandardMaterial({ color: 0xa35a3a }));
+      pot.position.set(x, 1.86, z + R(-0.3, 0.3)); g.add(pot);
+      const pl = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.35, 5), leaf); pl.position.set(pot.position.x, 2.1, pot.position.z); g.add(pl);
+      const b = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5), blooms[Math.floor(R(0, 4))]); b.position.set(pot.position.x + 0.05, 2.35, pot.position.z); g.add(b);
+    }
+  }
   place(g, SITES.orchid, 0, -0.4);
   scene.add(shadowy(g));
-  house.castShadow = false;
+  walls.castShadow = false; roof.castShadow = false;
 }
 
 // The submarine dock: the pier where Locke blew up the Others' submarine ("The Man from Tallahassee").

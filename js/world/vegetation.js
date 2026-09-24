@@ -291,9 +291,15 @@ function createJungle(scene) {
   // lava rocks where the cove meets the rocky headlands either side of the beach
   const rockGeo = new THREE.DodecahedronGeometry(1, 1);
   const rp = rockGeo.attributes.position;
-  for (let i = 0; i < rp.count; i++) { const s = 1 + (h2(i, 9) - 0.5) * 0.5; rp.setXYZ(i, rp.getX(i) * s, rp.getY(i) * s, rp.getZ(i) * s); }
+  // lumpy rocks: the bump depends on the vertex position, so the copies of a corner shared by
+  // neighbouring faces all move together and the surface stays closed
+  for (let i = 0; i < rp.count; i++) {
+    const x = rp.getX(i), y = rp.getY(i), z = rp.getZ(i);
+    const s = 1 + (h2(Math.round(x * 97 + y * 13), Math.round(z * 89 - y * 7)) - 0.5) * 0.5;
+    rp.setXYZ(i, x * s, y * s, z * s);
+  }
   rockGeo.computeVertexNormals();
-  const rocks = new THREE.InstancedMesh(rockGeo, new THREE.MeshStandardMaterial({ color: 0x2c2926, roughness: 0.85, flatShading: true }), 160);
+  const rocks = new THREE.InstancedMesh(rockGeo, new THREE.MeshStandardMaterial({ color: 0x57504a, roughness: 0.9 }), 160);
   n = 0;
   for (let i = 0; i < 4000 && n < 160; i++) {
     const a = R(0, Math.PI * 2), dist = R(70, 420), x = 4 + Math.cos(a) * dist, z = 5 + Math.sin(a) * dist;

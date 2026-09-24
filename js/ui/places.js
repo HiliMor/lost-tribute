@@ -29,7 +29,7 @@ export const PLACES = [
   {
     id: 'rousseau', season: 1, name: "Rousseau's shelter", ref: 'Season 1 · "Solitary"',
     text: 'Danielle Rousseau, shipwrecked sixteen years earlier, caught Sayid in one of her traps and held him here.',
-    site: 'rousseau', lift: 1, dist: 30, rise: 10,
+    site: 'rousseau', lift: 1.2, dist: 14, rise: 3,
   },
   {
     id: 'beechcraft', season: 1, name: 'The Beechcraft', ref: 'Season 1 · "Deus Ex Machina"',
@@ -69,7 +69,7 @@ export const PLACES = [
   {
     id: 'pearl', season: 2, name: 'The Pearl', ref: 'Season 2 · "?"',
     text: 'Locke and Eko found this observation station, whose monitors watched the Swan. Pressing the button was a psychological experiment.',
-    site: 'pearl', lift: 1.5, dist: 24, rise: 7,
+    site: 'pearl', lift: 0.5, dist: 14, rise: 4, front: true,
   },
   {
     id: 'balloon', season: 2, name: "Henry Gale's balloon", ref: 'Season 2 · "The Whole Truth"',
@@ -129,7 +129,7 @@ export const PLACES = [
   {
     id: 'jacobsCave', season: 6, name: "Jacob's cave", ref: 'Season 6 · "The Substitute"',
     text: "The Man in Black showed Sawyer the candidates' names written on this cave's ceiling, each with a number: 4, 8, 15, 16, 23, 42.",
-    site: 'jacobsCave', lift: 3, offshore: 10, sea: 55, side: 20, height: 8,
+    site: 'jacobsCave', lift: 2.5, offshore: 10, sea: 26, side: 5, height: 4,
   },
 ];
 

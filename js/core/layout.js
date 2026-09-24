@@ -39,7 +39,7 @@ export const CLEARINGS = [
   { site: 'statue',     r: 30,  flat: 0 },
   { site: 'beechcraft', r: 7,   flat: 0 },
   { site: 'hatch',      r: 32,  flat: 0.4 },
-  { site: 'golf',       r: 48,  flat: 0.85 },
+  { site: 'golf',       r: 62,  flat: 0.9 },
   { site: 'flame',      r: 45,  flat: 0.85 },
   { site: 'orchid',     r: 30,  flat: 0.8 },
   { site: 'jacobsCabin', r: 24, flat: 0.75 },

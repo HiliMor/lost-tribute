@@ -198,7 +198,7 @@ export function createJungle(scene) {
   // tree ferns (a trunk with a fern crown) and ground ferns
   const fernGeo = fernGeometry(9, 1.6);
   const treeFernGeo = { crown: fernGeometry(11, 2.4).translate(0, 3.2, 0), trunk: new THREE.CylinderGeometry(0.12, 0.16, 3.3, 6).translate(0, 1.65, 0) };
-  const fernSpots = scatter(Math.round(14000 * k), 0, 80, 12, 0.6);
+  const fernSpots = scatter(Math.round(14000 * k), 0, 80, 24, 0.6);   // 24 m from the sea: never on the sand
   const ferns = new THREE.InstancedMesh(fernGeo, fernM, fernSpots.length);
   const fernGreens = ['#7aa04a', '#5e8a36', '#8fb055', '#6b8f3e'].map((c) => new THREE.Color(c));
   fernSpots.forEach(([x, z], i) => {
@@ -211,7 +211,7 @@ export function createJungle(scene) {
   ferns.receiveShadow = true;
   scene.add(ferns);
 
-  const tfSpots = scatter(Math.round(1100 * k), 0, 90, 16, 0.85);
+  const tfSpots = scatter(Math.round(1100 * k), 0, 90, 26, 0.85);
   const tfTrunks = new THREE.InstancedMesh(treeFernGeo.trunk, bark, tfSpots.length);
   const tfCrowns = new THREE.InstancedMesh(treeFernGeo.crown, fernM, tfSpots.length);
   tfSpots.forEach(([x, z], i) => {
