@@ -1,7 +1,8 @@
 // The island ground: beach, dunes, jungle floor, hills and the two mountains.
 import * as THREE from 'three/webgpu';
 import { float, vec2, vec3, sin, mix, smoothstep, abs, positionWorld, vertexColor, mx_noise_float } from 'three/tsl';
-import { fbm, sstep, shoreZ, terrainH } from '../core/terrain-math.js';
+import { fbm, sstep, landDist, terrainH } from '../core/terrain-math.js';
+import { SITES } from '../core/layout.js';
 
 // A grid of vertices at the given x and z positions (uneven spacing = more detail where it matters).
 export function gridGeometry(xs, zs, yFn) {
@@ -24,8 +25,9 @@ export function gridGeometry(xs, zs, yFn) {
 
 export function createTerrain(scene) {
   const xs = [], zs = [];
-  for (let i = 0; i <= 300; i++) { const s = i / 300 * 2 - 1; xs.push(s * 150 + s * s * s * 330); }
-  for (let j = 0; j <= 230; j++) { const t = j / 230; zs.push(-70 + t * 140 + t * t * t * 400); }
+  // dense near the crash beach, coarser towards the far side of the island
+  for (let i = 0; i <= 420; i++) { const s = i / 420 * 2 - 1; xs.push(s * 420 + s * s * s * 1350); }
+  for (let j = 0; j <= 340; j++) { const t = j / 340; zs.push(-160 + t * 300 + t * t * t * 2000); }
   const g = gridGeometry(xs, zs, terrainH);
   g.computeVertexNormals();
 
@@ -33,11 +35,14 @@ export function createTerrain(scene) {
   const p = g.attributes.position, nrm = g.attributes.normal;
   const col = new Float32Array(p.count * 3);
   const C = (h) => new THREE.Color(h);
-  const wet = C('#8f7a58'), sand = C('#e2cfa2'), sand2 = C('#cdb487'), grass = C('#6f7536'), floor = C('#2e3c1b'), rock = C('#4a433c'), seabed = C('#5f7a6a');
+  const wet = C('#8f7a58'), sand = C('#e2cfa2'), sand2 = C('#cdb487'), grass = C('#6f7536'), floor = C('#35451f'), rock = C('#4a433c'), seabed = C('#5f7a6a');
+  const lawn = C('#6f8a3c'), dirt = C('#5c4f3a');
+  const clearing = C('#56602e');
+  const B = SITES.barracks, T = SITES.temple, K = SITES.blackRock;
   const tmp = new THREE.Color();
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    const d = z - shoreZ(x);
+    const d = landDist(x, z);
     tmp.copy(sand).lerp(sand2, fbm(x * .08, z * .08, 3));
     if (d < 1) tmp.lerp(wet, sstep(1, -1, d) * .9);
     if (d < -4) tmp.lerp(seabed, sstep(-4, -40, d));
@@ -46,6 +51,10 @@ export function createTerrain(scene) {
     const steep = 1 - nrm.getY(i);
     tmp.lerp(rock, sstep(0.22, 0.45, steep) * (d > 10 || x > 110 ? 1 : 0));
     if (y > 60) tmp.lerp(rock, sstep(80, 150, y) * .5);
+    // the Barracks lawn and the trampled ground around the Temple
+    tmp.lerp(lawn, 1 - sstep(70, 105, Math.hypot(x - B.x, z - B.z)));
+    tmp.lerp(dirt, (1 - sstep(40, 70, Math.hypot(x - T.x, z - T.z))) * 0.7);
+    tmp.lerp(clearing, (1 - sstep(25, 55, Math.hypot(x - K.x, z - K.z))) * 0.8);
     col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
   }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
@@ -68,4 +77,23 @@ export function createTerrain(scene) {
   terrain.receiveShadow = true;
   scene.add(terrain);
   return terrain;
+}
+
+// The ground height baked into a texture, so the ocean shader knows the water depth on every coast.
+export const HEIGHTMAP = { x0: -1800, x1: 1800, z0: -700, z1: 2400, w: 512, h: 440 };
+export function createHeightTexture() {
+  const { x0, x1, z0, z1, w, h } = HEIGHTMAP;
+  const data = new Uint16Array(w * h);
+  for (let j = 0; j < h; j++) {
+    const z = z0 + (j + 0.5) / h * (z1 - z0);
+    for (let i = 0; i < w; i++) {
+      const x = x0 + (i + 0.5) / w * (x1 - x0);
+      data[j * w + i] = THREE.DataUtils.toHalfFloat(terrainH(x, z));
+    }
+  }
+  const tex = new THREE.DataTexture(data, w, h, THREE.RedFormat, THREE.HalfFloatType);
+  tex.magFilter = tex.minFilter = THREE.LinearFilter;
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.needsUpdate = true;
+  return tex;
 }

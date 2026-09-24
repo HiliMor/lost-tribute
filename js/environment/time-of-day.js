@@ -7,7 +7,7 @@ import {
   uSunDir, uMoonDir, uZenith, uHorizon, uSunCol, uCloudDark, uDeep, uShallow, uSmoke,
   uSunUp, uNight, uFoamLight, uBeam
 } from '../core/uniforms.js';
-import { FOCUS } from './lights.js';
+import { lightState } from './lights.js';
 
 const KEYS = [
   { t: 0.00, el: 13, zen: '#2e5d9e', hor: '#f2b87c', sun: '#ffd9a2', cloud: '#7a7390', deep: '#0b3b4b', shal: '#35b3a8', fog: '#d7ad85', light: 3.3, lcol: '#ffd6a8', hs: '#9fb8d8', hg: '#7a6444', hi: 0.8, exp: 0.66, smoke: '#b9a08a', foam: 1.0 },
@@ -44,14 +44,14 @@ export function createTimeOfDay({ scene, renderer, hemi, sun, environment }) {
     uMoonDir.value.copy(moonV);
     uBeam.value = sstep(0.72, 0.95, t);
     scene.fog.color.copy(lerpKey(t, 'fog'));
-    scene.fog.density = 0.0021 + uNight.value * 0.0012;
+    lightState.fogDensity = 0.0012 + uNight.value * 0.0008;
     hemi.color.copy(lerpKey(t, 'hs')); hemi.groundColor.copy(lerpKey(t, 'hg')); hemi.intensity = lerpKey(t, 'hi') * 0.6;
     environment.markDirty();
     renderer.toneMappingExposure = lerpKey(t, 'exp');
     // one directional light: the sun, handing over to the moon at dusk while both are dim
     const sunI = lerpKey(t, 'light'), moonI = sstep(0.62, 1, t) * 0.55;
-    if (sunI >= moonI) { sun.color.copy(lerpKey(t, 'lcol')); sun.intensity = sunI; sun.position.copy(FOCUS).addScaledVector(uSunDir.value, 220); }
-    else { sun.color.set('#8ea6ff'); sun.intensity = moonI; sun.position.copy(FOCUS).addScaledVector(moonV, 220); }
+    if (sunI >= moonI) { sun.color.copy(lerpKey(t, 'lcol')); sun.intensity = sunI; lightState.dir.copy(uSunDir.value); }
+    else { sun.color.set('#8ea6ff'); sun.intensity = moonI; lightState.dir.copy(moonV); }
     // HUD clock and label
     const mins = Math.round(17 * 60 + 48 + t * 112);
     const hh = Math.floor(mins / 60), mm = String(mins % 60).padStart(2, '0');

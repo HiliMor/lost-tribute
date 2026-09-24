@@ -31,9 +31,10 @@
 <canvas id="scene" aria-label="Interactive 3D scene of the Oceanic Flight 815 crash beach at dusk"></canvas>
 
 <div class="hud place">
-  <div class="eyebrow">Oceanic 815 · Sydney → Los Angeles</div>
-  <h1>Crash site, north shore</h1>
+  <div class="eyebrow" id="placeRef">Oceanic 815 · Sydney → Los Angeles</div>
+  <h1 id="placeName">Crash site, south shore</h1>
   <div class="meta"><span id="clock">22 Sep 2004 · 18:24</span> · Day 1</div>
+  <p class="story" id="placeText" hidden></p>
   <div class="tribute"><b>A fan-made tribute to <i>Lost</i></b>, which premiered on 22 Sep 2004 — <span class="yrs">22</span> years ago. Not affiliated with ABC or Disney.</div>
 </div>
 
@@ -68,6 +69,7 @@
 <div class="hud controls">
   <div class="row">
     <span class="chip" id="backend">Starting…</span>
+    <button class="chip" id="mapBtn" type="button" aria-expanded="false" aria-controls="islandMap">Island map</button>
     <button class="chip" id="sound" type="button" aria-pressed="false">Sound off</button>
   </div>
   <div class="sun">
@@ -77,7 +79,20 @@
   </div>
 </div>
 
-<div class="hud hint">Drag to look around · scroll to move closer<br>Wait for night and look inland.</div>
+<div class="hud hint">Drag to look around · scroll to move closer<br>Open the island map (M) to explore the Island.</div>
+
+<div class="map-overlay" id="islandMap" hidden>
+  <div class="map-card" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+    <div class="map-head">
+      <h2 id="mapTitle">Island map</h2>
+      <button class="chip" id="mapClose" type="button">Close</button>
+    </div>
+    <div class="map-body">
+      <canvas id="mapCanvas" width="880" height="686" aria-label="Map of the Island with numbered places"></canvas>
+      <ol class="map-list" id="mapList"></ol>
+    </div>
+  </div>
+</div>
 
 <div class="flash" id="flash"></div>
 

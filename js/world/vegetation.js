@@ -5,7 +5,8 @@ import {
   float, vec2, vec3, sin, dot, normalize, mix, smoothstep, max, pow, abs, fract, floor, hash, step, select,
   uv, attribute, positionLocal, positionWorld, cameraPosition, vertexColor, mx_noise_float
 } from 'three/tsl';
-import { h2, shoreZ, terrainH } from '../core/terrain-math.js';
+import { h2, shoreZ, terrainH, landDist } from '../core/terrain-math.js';
+import { SITES, CLEARINGS, HYDRA, coastPoint } from '../core/layout.js';
 import { isPhone, rnd, R, placeOn, shadowy } from '../core/utils.js';
 import { uT, uSunDir, uSunCol, uSunUp, uWind } from '../core/uniforms.js';
 
@@ -112,6 +113,18 @@ function createPalms(scene) {
     if (Math.hypot(x + 6, z - 18.5) < 5) continue;  // and the fire
     const toSea = new THREE.Vector3(R(-0.4, 0.4), 0, -1).normalize();
     palm(x, z, R(7, 13), edge ? toSea : new THREE.Vector3(R(-1, 1), 0, R(-1, 0.3)).normalize(), edge ? R(0.25, 0.5) : R(0.04, 0.2));
+  }
+  // palms along the rest of the coastline and on Hydra Island, leaning out to sea
+  const LH = SITES.lighthouse, ST = SITES.statue;
+  for (let i = 0; i < 110; i++) {
+    const th = R(-0.55, 3.7), p = coastPoint(th, R(14, 42));
+    if (Math.hypot(p.x - LH.x, p.z - LH.z) < 90 || Math.hypot(p.x - ST.x, p.z - ST.z) < 40 || p.z < 60) continue;
+    palm(p.x, p.z, R(7, 13), new THREE.Vector3(Math.cos(th), 0, Math.sin(th)), R(0.15, 0.45));
+  }
+  for (let i = 0; i < 16; i++) {
+    const th = R(0, Math.PI * 2), r = HYDRA.r * 0.72 - R(0, 30);
+    if (Math.abs(Math.cos(th) + 0.9) < 0.35) continue;   // leave the Hydra station clear
+    palm(HYDRA.x + Math.cos(th) * r, HYDRA.z + Math.sin(th) * r, R(7, 11), new THREE.Vector3(Math.cos(th), 0, Math.sin(th)), R(0.15, 0.4));
   }
 
   const tg = new THREE.BufferGeometry();
@@ -223,17 +236,22 @@ function createJungle(scene) {
   blobGeo.computeVertexNormals();
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), ps = new THREE.Vector3(), col = new THREE.Color();
 
-  // canopy covering the hills
-  const N = isPhone ? 2400 : 4200;
+  // canopy covering the island, leaving clearings around the landmarks
+  const N = isPhone ? 5500 : 11000;
+  const open = CLEARINGS.map((c) => ({ x: SITES[c.site].x, z: SITES[c.site].z, r: c.r }));
+  const inClearing = (x, z) => open.some((c) => Math.hypot(x - c.x, z - c.z) < c.r);
   const canopy = new THREE.InstancedMesh(blobGeo, new THREE.MeshStandardMaterial({ roughness: 0.92 }), N);
   const greens = ['#24361a', '#2d4420', '#1d2e16', '#3a4d22', '#2a3d27', '#33471c'].map((c) => new THREE.Color(c));
   let n = 0, tries = 0;
-  while (n < N && tries < 60000) {
+  while (n < N && tries < 160000) {
     tries++;
-    const x = R(-420, 420), z = R(20, 460);
-    const d = z - shoreZ(x), h = terrainH(x, z);
-    if (d < 30 || h > 150) continue;
-    if (x > 130 && d < 60 && rnd() < 0.7) continue;
+    const onHydra = tries % 40 === 0;
+    const x = onHydra ? HYDRA.x + R(-190, 190) : R(-1000, 1000), z = onHydra ? HYDRA.z + R(-190, 190) : R(20, 1700);
+    const d = landDist(x, z);
+    if (d < 30 || inClearing(x, z)) continue;
+    const h = terrainH(x, z);
+    if (h > 330) continue;
+    if (x > 130 && z < 420 && d < 60 && rnd() < 0.7) continue;
     const s = R(3.5, 8.5) * (d < 45 ? 0.7 : 1);
     ps.set(x, h + s * 0.45, z);
     q.setFromEuler(new THREE.Euler(R(-0.2, 0.2), R(0, 6.28), R(-0.2, 0.2)));

@@ -12,17 +12,21 @@ import { createLights } from './environment/lights.js';
 import { createTimeOfDay } from './environment/time-of-day.js';
 import { createPostProcessing } from './environment/post.js';
 
-import { createTerrain } from './world/terrain.js';
+import { createTerrain, createHeightTexture } from './world/terrain.js';
 import { createOcean } from './world/ocean.js';
 import { createWreck } from './world/wreck.js';
 import { createFire, FIRE } from './world/fire.js';
 import { createVegetation } from './world/vegetation.js';
 import { createWildlife } from './world/wildlife.js';
 import { createHatch } from './world/hatch.js';
+import { createLandmarks } from './world/landmarks/index.js';
+import { createFlight } from './core/camera-flight.js';
 
 import { audio, setupSoundButton } from './ui/audio.js';
 import { setupSwan, updateSwan } from './ui/swan.js';
 import { setupIntro, updateAnniversary, showStartupError } from './ui/intro.js';
+import { setupIslandMap } from './ui/island-map.js';
+import { PLACES, OVERVIEW, viewFor } from './ui/places.js';
 
 updateAnniversary();
 
@@ -63,13 +67,15 @@ if (innerHeight > innerWidth) camera.position.set(44, 7, -12);
 const sky = createSky(scene);
 const environment = createEnvironment(renderer, scene);
 createTerrain(scene);
-createOcean(scene);
-const { hemi, sun } = createLights(scene);
+createOcean(scene, createHeightTexture());
+const lights = createLights(scene);
+const { hemi, sun } = lights;
 const wreck = createWreck(scene);
 const fire = createFire(scene);
 createVegetation(scene);
 const wildlife = createWildlife(scene, camera);
 const hatch = createHatch(scene);
+const landmarks = createLandmarks(scene);
 createTimeOfDay({ scene, renderer, hemi, sun, environment });
 const pipeline = createPostProcessing(renderer, scene, camera);
 
@@ -79,7 +85,7 @@ controls.target.set(0, 2.2, 13);
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
 controls.minDistance = 6;
-controls.maxDistance = 120;
+controls.maxDistance = 3200;
 controls.maxPolarAngle = 1.47;
 controls.autoRotate = !reduceMotion;
 controls.autoRotateSpeed = 0.22;
@@ -96,6 +102,31 @@ addEventListener('resize', () => {
 /* ---------- HUD ---------- */
 setupSoundButton();
 setupSwan();
+
+// Island map: fly to a place and tell its story in the top-left panel
+const flight = createFlight(camera, controls, { reduceMotion });
+function showPlace(place) {
+  $('placeRef').textContent = place.ref;
+  $('placeName').textContent = place.name;
+  $('placeText').textContent = place.text;
+  $('placeText').hidden = false;
+}
+const slug = (place) => place.id.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
+setupIslandMap({
+  onPick(place) {
+    const { from, to } = viewFor(place);
+    showPlace(place);
+    flight.flyTo(from, to);
+    try { history.replaceState(null, '', '#' + slug(place)); } catch { /* not allowed in some embeds */ }
+  },
+});
+// a link like …/#black-rock opens straight at that place
+const linked = [...PLACES, OVERVIEW].find((p) => '#' + slug(p) === location.hash);
+if (linked) {
+  const { from, to } = viewFor(linked);
+  camera.position.copy(from); controls.target.copy(to); controls.update();
+}
+showPlace(linked || PLACES[0]);
 
 /* ---------- Frame loop ---------- */
 let lastNow = performance.now();
@@ -118,7 +149,9 @@ function frame() {
   sky.position.copy(camera.position);
 
   camera.position.sub(shake);
-  controls.update(dt);
+  if (flight.update(dt)) camera.lookAt(controls.target); else controls.update(dt);
+  landmarks.update(dt);
+  lights.update(camera, controls.target);
   // keep the camera above ground and water
   const floorY = Math.max(terrainH(camera.position.x, camera.position.z), 0) + 1.4;
   if (camera.position.y < floorY) camera.position.y = floorY;

@@ -2,12 +2,12 @@
 import * as THREE from 'three/webgpu';
 import {
   Fn, float, vec2, vec3, vec4, sin, cos, exp, dot, normalize, mix, smoothstep, clamp, max, pow, abs,
-  fract, length, reflect, step, positionLocal, positionWorld, cameraPosition, mx_noise_float
+  fract, length, reflect, step, texture, positionLocal, positionWorld, cameraPosition, mx_noise_float
 } from 'three/tsl';
-import { SLOPE } from '../core/terrain-math.js';
+import { ISLAND } from '../core/layout.js';
 import { uT, uSunDir, uMoonDir, uHorizon, uSunCol, uDeep, uShallow, uSunUp, uNight, uFoamLight } from '../core/uniforms.js';
 import { skyGradient } from '../environment/sky.js';
-import { gridGeometry } from './terrain.js';
+import { gridGeometry, HEIGHTMAP } from './terrain.js';
 
 // Big swells move the surface; the detail waves only change the lighting.
 const WAVES = [
@@ -43,21 +43,22 @@ function waveSum(p, list) {
   return { h, dx, dz };
 }
 
-// Shader version of shoreZ() in terrain-math.js
-const shoreZn = (x) => sin(x.mul(0.021)).mul(4.0).add(sin(x.mul(0.057).add(1.3)).mul(2.5));
-
-export function createOcean(scene) {
+// heightTex: the island's ground height (see createHeightTexture in terrain.js)
+export function createOcean(scene, heightTex) {
+  // one sheet of water around the whole island: dense near the crash beach, coarse far out
   const xs = [], zs = [];
-  for (let i = 0; i <= 320; i++) { const s = i / 320 * 2 - 1; xs.push(s * 260 + s * s * s * 2600); }
-  for (let j = 0; j <= 300; j++) { const t = j / 300; zs.push(22 - t * 150 - t * t * t * 2800); }
-  zs.reverse();
+  for (let i = 0; i <= 360; i++) { const s = i / 360 * 2 - 1; xs.push(s * 320 + s * s * s * 4300); }
+  for (let j = 0; j <= 380; j++) { const t = j / 380 * 2 - 1; zs.push(t * 380 + t * t * t * 4900); }
   const g = gridGeometry(xs, zs);
   const mat = new THREE.MeshBasicNodeMaterial({ transparent: true });
 
-  // water depth from the shoreline, and how much the waves are damped there
+  // water depth from the height map, and how much the waves are damped there
+  const { x0, x1, z0, z1 } = HEIGHTMAP;
   const ampAt = (p) => {
-    const depth = shoreZn(p.x).sub(p.y).mul(SLOPE);
-    return { depth, a: smoothstep(-0.6, 4.5, depth).mul(smoothstep(500.0, 2200.0, length(p)).oneMinus().mul(0.8).add(0.2)) };
+    const hUV = vec2(p.x.sub(x0).div(x1 - x0), p.y.sub(z0).div(z1 - z0));
+    const depth = texture(heightTex, hUV).r.negate();
+    const far = smoothstep(1300.0, 4000.0, length(p.sub(vec2(ISLAND.cx, ISLAND.cz))));
+    return { depth, a: smoothstep(-0.6, 4.5, depth).mul(far.oneMinus().mul(0.8).add(0.2)) };
   };
   // water running up the beach
   const swashAt = (p, depth) => pow(sin(uT.mul(0.55).add(p.x.mul(0.035))).mul(0.5).add(0.5), 2.0).mul(0.24).mul(smoothstep(0.0, 5.0, depth).oneMinus());
@@ -76,7 +77,8 @@ export function createOcean(scene) {
     const dist = length(cameraPosition.sub(pw));
     const big = waveSum(P, WAVES);
     const fine = waveSum(P, DETAIL);
-    const df = smoothstep(30.0, 600.0, dist).oneMinus().mul(0.85).add(0.15);
+    const df = smoothstep(30.0, 700.0, dist).oneMinus().mul(0.9).add(0.1);
+    const nearF = smoothstep(500.0, 2500.0, dist).oneMinus();   // fade glitter far away (it only sparkles)
     const N = normalize(vec3(big.dx.mul(a).add(fine.dx.mul(df)).negate(), 1.0, big.dz.mul(a).add(fine.dz.mul(df)).negate()));
     const V = normalize(cameraPosition.sub(pw));
     const ndv = max(dot(N, V), 0.0);
@@ -94,7 +96,7 @@ export function createOcean(scene) {
     let col = mix(water, refl, fres);
     // sun glitter and moonlight path
     const rs = max(dot(R, uSunDir), 0.0);
-    col = col.add(uSunCol.mul(pow(rs, 900.0).mul(70.0).add(pow(rs, 90.0).mul(1.1))).mul(uSunUp));
+    col = col.add(uSunCol.mul(pow(rs, 900.0).mul(70.0).mul(nearF).add(pow(rs, 90.0).mul(1.1))).mul(uSunUp));
     col = col.add(vec3(0.7, 0.8, 1.0).mul(pow(max(dot(R, uMoonDir), 0.0), 500.0).mul(10.0).mul(uNight)));
     // foam
     const thickness = pw.y.add(depth);

@@ -1,0 +1,120 @@
+// The Black Rock: the 19th-century slave ship stranded deep in the jungle, tilted over,
+// holed in its side, masts broken and hung with vines (season 1, "Exodus").
+import * as THREE from 'three/webgpu';
+import { SITES } from '../../core/layout.js';
+import { terrainH } from '../../core/terrain-math.js';
+import { R, shadowy } from '../../core/utils.js';
+import { woodMaterial, strut } from './materials.js';
+
+const L = 38, B = 10, D = 7;
+
+// hull cross-section at station s (0 = stern, 1 = bow)
+const halfWidth = (s) => B / 2 * Math.pow(Math.max(0.03, 1 - Math.pow(Math.abs(s * 2 - 1.1) / 1.1, 2.2)), 0.45);
+const deckY = (s) => 0.9 * Math.pow(Math.abs(s * 2 - 1), 2) + (s < 0.18 ? (0.18 - s) * 9 : 0);
+const depth = (s) => D * (0.7 + 0.3 * Math.sin(Math.PI * s));
+
+function hullGeometry() {
+  const NS = 32, NA = 18, pos = [], idx = [];
+  for (let i = 0; i <= NS; i++) {
+    const s = i / NS, w = halfWidth(s), dy = deckY(s), d = depth(s);
+    for (let j = 0; j <= NA; j++) {
+      const a = j / NA * 2 - 1, phi = a * Math.PI / 2;
+      pos.push((s - 0.5) * L, dy - d * Math.pow(Math.cos(phi), 1.3), w * Math.sin(phi));
+    }
+  }
+  // the hole torn in the starboard side
+  const hole = (s, a) => s > 0.4 + 0.035 * Math.sin(a * 17) && s < 0.6 + 0.03 * Math.sin(a * 23 + 1) && a > 0.22 + 0.06 * Math.sin(s * 40) && a < 0.9;
+  for (let i = 0; i < NS; i++) for (let j = 0; j < NA; j++) {
+    const s = (i + 0.5) / NS, a = (j + 0.5) / NA * 2 - 1;
+    if (hole(s, a)) continue;
+    const p = i * (NA + 1) + j, q = p + NA + 1;
+    idx.push(p, q, p + 1, p + 1, q, q + 1);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+function deckGeometry() {
+  const pos = [], idx = [];
+  const NS = 30;
+  for (let i = 0; i <= NS; i++) {
+    const s = 0.05 + i / NS * 0.88, w = halfWidth(s) * 0.96, y = deckY(s) - 0.12;
+    pos.push((s - 0.5) * L, y, -w, (s - 0.5) * L, y, w);
+  }
+  for (let i = 0; i < NS; i++) {
+    const s = 0.05 + (i + 0.5) / NS * 0.88;
+    if (s > 0.44 && s < 0.58) continue;           // collapsed middle of the deck
+    const a = i * 2;
+    idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+export function createBlackRock(scene) {
+  const site = SITES.blackRock;
+  const ship = new THREE.Group();
+  const hullWood = woodMaterial('#33220f', { planks: 0.42, moss: 0.7 });
+  const deckWood = woodMaterial('#4a341d', { planks: 1e3, moss: 0.8 });
+  const spar = new THREE.MeshStandardMaterial({ color: 0x2e2114, roughness: 0.95 });
+  const rope = new THREE.MeshStandardMaterial({ color: 0x3b3325, roughness: 1 });
+  const vineM = new THREE.MeshStandardMaterial({ color: 0x2c4219, roughness: 0.9 });
+  const leafM = new THREE.MeshStandardMaterial({ color: 0x31501d, roughness: 0.9, flatShading: true });
+
+  ship.add(new THREE.Mesh(hullGeometry(), hullWood));
+  ship.add(new THREE.Mesh(deckGeometry(), deckWood));
+  // ribs visible through the hole
+  for (let i = 0; i < 6; i++) {
+    const s = 0.42 + i * 0.035, x = (s - 0.5) * L, w = halfWidth(s);
+    ship.add(strut(new THREE.Vector3(x, deckY(s) - 0.2, w * 0.98), new THREE.Vector3(x, deckY(s) - depth(s) * 0.8, w * 0.55), 0.14, spar));
+  }
+
+  // masts: fore and mizzen standing, main mast snapped
+  const masts = [[0.74, 17, 0.05], [0.5, 8.5, -0.12], [0.26, 13, 0.1]];
+  const tops = [];
+  for (const [s, h, lean] of masts) {
+    const x = (s - 0.5) * L, base = new THREE.Vector3(x, deckY(s) - 1, 0);
+    const top = new THREE.Vector3(x + lean * h, deckY(s) + h, lean * 2);
+    ship.add(strut(base, top, 0.32, spar, 8));
+    tops.push(top);
+    if (h > 10) {
+      // yards (cross spars), one hanging askew
+      for (const [yy, span, tilt] of [[h * 0.55, 7, 0.08], [h * 0.85, 5, -0.35]]) {
+        const c = new THREE.Vector3(x + lean * yy, deckY(s) + yy, lean * 2);
+        ship.add(strut(c.clone().add(new THREE.Vector3(0, -span * Math.sin(tilt), -span)), c.clone().add(new THREE.Vector3(0, span * Math.sin(tilt), span)), 0.13, spar, 6));
+      }
+    }
+  }
+  // rigging from the mast tops down to the rails
+  for (const top of tops) {
+    for (const side of [-1, 1]) for (const dx of [-3, 2]) {
+      const s = (top.x + dx) / L + 0.5;
+      ship.add(strut(top, new THREE.Vector3(top.x + dx, deckY(s), side * halfWidth(s) * 0.95), 0.03, rope, 4));
+    }
+  }
+  // vines hanging from the rails and yards, and leaves taking over the deck
+  for (let i = 0; i < 46; i++) {
+    const s = R(0.08, 0.92), side = R(0, 1) < 0.5 ? -1 : 1, len = R(1.5, 5.5);
+    const p0 = new THREE.Vector3((s - 0.5) * L, deckY(s), side * halfWidth(s));
+    ship.add(strut(p0, p0.clone().add(new THREE.Vector3(R(-0.3, 0.3), -len, side * R(0, 0.4))), 0.05, vineM, 4));
+  }
+  for (let i = 0; i < 26; i++) {
+    const s = R(0.06, 0.94);
+    const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(R(0.6, 1.4), 0), leafM);
+    leaf.position.set((s - 0.5) * L, deckY(s) + 0.2, R(-0.8, 0.8) * halfWidth(s));
+    ship.add(leaf);
+  }
+
+  // tilted over on its side, keel buried in the jungle floor
+  // broadside (and the hole) turned towards the low afternoon sun
+  ship.rotation.set(0.05, -1.02 + Math.PI, 0.22, 'YXZ');
+  ship.position.set(site.x, terrainH(site.x, site.z) + 4.6, site.z);
+  scene.add(shadowy(ship));
+  return ship;
+}

@@ -8,12 +8,23 @@ A fan-made tribute to *LOST*, which premiered on 22 September 2004. It shows the
 
 ## What's in it
 
-- The wreck: the fuselage in Oceanic livery, a jet engine, a wing, and luggage and seats scattered across the sand
-- A shader-driven ocean with turquoise shallows, breaking surf and water running up the beach
-- Swaying palms, jungle hills, a signal fire with embers and smoke
-- A light slider from golden hour to night. At night, look inland for the hatch.
+- **The whole Island**, laid out after fan-reconstructed maps of the show: the crash beach on the south coast, the western and eastern plateaus with the central valley between them, and Hydra Island offshore
+- **An island map** (press **M**): click a numbered place to fly there. Each place links to the episode it's from:
+  1. Crash site, south shore: the Oceanic 815 wreck, signal fire, camp
+  2. The Hatch: the Swan station (its light comes on at night)
+  3. The Beechcraft: wedged nose-down in the canopy
+  4. The Black Rock: the slave ship stranded in the jungle
+  5. The Statue of Taweret: the four-toed foot off the west coast
+  6. The Temple: behind its high stone walls
+  7. The Radio Tower: on the western plateau
+  8. The Barracks: the DHARMA village and its sonic fence
+  9. The Lighthouse: Jacob's tower on the east cliffs
+  10. Hydra Island: the station and the bear cages
+- Every place has its own link, e.g. [#black-rock](https://hilimor.github.io/lost-tribute/#black-rock) or [#statue](https://hilimor.github.io/lost-tribute/#statue)
+- A shader-driven ocean with foam and shallows on every coast
+- A light slider from golden hour to night: stars, moonlight, the lighthouse beams and the hatch light
 - **The Swan:** a working 108-minute countdown. Type `4 8 15 16 23 42` and press Execute before it hits zero.
-- Optional sound (surf, fire, alarm), generated in the browser
+- Palms, crabs, seabirds, a campfire, and optional sound generated in the browser
 
 Everything is procedural: no footage, images, models or audio from the show are used.
 
@@ -35,7 +46,9 @@ index.html                 page structure: HUD, Swan panel, intro title
 css/style.css              all styling
 js/main.js                 entry point: renderer, camera, builds the island, frame loop
 js/core/
-  terrain-math.js          island shape: shoreline, beach slope, hills (used to place everything)
+  layout.js                where everything is: island outline, landmark positions, clearings
+  terrain-math.js          ground height everywhere (used to place everything)
+  camera-flight.js         smooth camera flights between places
   uniforms.js              shared shader values (sun, sky colours, time, discharge...)
   utils.js                 seeded random numbers and small helpers
 js/environment/
@@ -51,7 +64,11 @@ js/world/
   vegetation.js            palms, coconuts, driftwood, jungle, rocks
   wildlife.js              seabirds and crabs
   hatch.js                 the hatch and its light beam
+  landmarks/               Black Rock, Taweret statue, Temple, Barracks, Lighthouse,
+                           Radio Tower, Hydra station, Beechcraft (one file each)
 js/ui/
+  places.js                the places on the map: camera views and story notes
+  island-map.js            the island map window
   swan.js                  the 108-minute countdown
   audio.js                 generated sound
   intro.js                 LOST title card
