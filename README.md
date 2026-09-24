@@ -9,17 +9,12 @@ A fan-made tribute to *LOST*, which premiered on 22 September 2004. It shows the
 ## What's in it
 
 - **The whole Island**, traced from [Choekaas's map of the Island](https://i.imgur.com/NrhXLUu.jpeg) (updated fall 2024), the map [r/lost recommends as the most accurate](https://www.reddit.com/r/lost/comments/1h8lpkr/which_map_of_the_island_is_most_accurate/). The coastline, the mountains and every landmark's position come from his map; the island map in the app is drawn north-up like his. Around the camp, the hand-built crash beach takes over. Distances are true to the map's scale (the island is about 2 km across).
-- **An island map** (press **M**): click a numbered place to fly there. Each place links to the episode it's from:
-  1. Crash site, south shore: the Oceanic 815 wreck, signal fire, camp
-  2. The Hatch: the Swan station (its light comes on at night)
-  3. The Beechcraft: wedged nose-down in the canopy
-  4. The Black Rock: the slave ship stranded in the jungle
-  5. The Statue of Taweret: the four-toed foot off the west coast
-  6. The Temple: behind its high stone walls
-  7. The Radio Tower: on the western plateau
-  8. The Barracks: the DHARMA village and its sonic fence
-  9. The Lighthouse: Jacob's tower on the east cliffs
-  10. Hydra Island: the station and the bear cages
+- **An island map** (press **M**) with **25 places from the show**, grouped by season. Click a pin or a name to fly there; each place says which episode it's from:
+  - **Season 1:** crash site, the Cockpit, the Caves, the Golf Course, Rousseau's shelter, the Beechcraft, the Hatch, the Black Rock, the Radio Tower
+  - **Season 2:** the Tail Section, the Arrow, the Staff, the Pearl, Henry Gale's balloon, the Statue of Taweret
+  - **Season 3:** the Barracks, Hydra Island, the Flame, the Submarine dock, Jacob's cabin, the Looking Glass
+  - **Season 4:** the Orchid
+  - **Season 6:** the Temple, the Lighthouse, Jacob's cave
 - Every place has its own link, e.g. [#black-rock](https://hilimor.github.io/lost-tribute/#black-rock) or [#statue](https://hilimor.github.io/lost-tribute/#statue)
 - A shader-driven ocean with foam and shallows on every coast
 - A light slider from golden hour to night: stars, moonlight, the lighthouse beams and the hatch light
@@ -69,8 +64,8 @@ js/world/
   vegetation.js            palms, coconuts, driftwood, jungle, rocks
   wildlife.js              seabirds and crabs
   hatch.js                 the hatch and its light beam
-  landmarks/               Black Rock, Taweret statue, Temple, Barracks, Lighthouse,
-                           Radio Tower, Hydra station, Beechcraft (one file each)
+  landmarks/               one file per major landmark, plus dharma-stations.js
+                           and story-places.js for the smaller places
 js/ui/
   places.js                the places on the map: camera views and story notes
   island-map.js            the island map window

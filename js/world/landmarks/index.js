@@ -7,6 +7,8 @@ import { createRadioTower } from './radio-tower.js';
 import { createBarracks } from './barracks.js';
 import { createLighthouse } from './lighthouse.js';
 import { createHydra } from './hydra.js';
+import { createDharmaStations } from './dharma-stations.js';
+import { createStoryPlaces } from './story-places.js';
 
 export function createLandmarks(scene) {
   createBeechcraft(scene);
@@ -17,7 +19,9 @@ export function createLandmarks(scene) {
   createBarracks(scene);
   const lighthouse = createLighthouse(scene);
   createHydra(scene);
+  const lookingGlass = createDharmaStations(scene);
+  createStoryPlaces(scene);
   return {
-    update(dt) { lighthouse.update(dt); },
+    update(dt, t) { lighthouse.update(dt); lookingGlass.update(t); },
   };
 }

@@ -5,12 +5,7 @@ import { terrainH } from '../core/terrain-math.js';
 import { SITES, toWorld, toMap } from '../core/layout.js';
 import { PLACES, OVERVIEW } from './places.js';
 
-// where each label sits relative to its pin: [x, y] in pin radii, and text alignment
-const LABELS = {
-  crash: [1.5, 0.6, 'left'], hatch: [-1.5, 0.3, 'right'], beechcraft: [1.5, 0.2, 'left'],
-  blackRock: [-1.5, 0.3, 'right'], lighthouse: [-1.5, 0.8, 'right'], hydra: [0, 2.2, 'center'],
-  temple: [-1.5, 0, 'right'],
-};
+export const SEASON_COLOURS = { 1: '#8b2b1f', 2: '#2f5d7c', 3: '#4a6b2a', 4: '#7a4f8a', 6: '#a9761d' };
 
 // The part of Choekaas's map shown, in map pixels (north is up, as on his map).
 const BOUNDS = { x0: 30, x1: 1200, y0: 20, y1: 1000 };
@@ -62,37 +57,59 @@ function drawMap(canvas) {
   g.font = `600 ${Math.round(W * 0.022)}px Jost, sans-serif`; g.textAlign = 'center';
   g.fillText('N', cx, cy - r - 6);
 
-  // numbered pins
+  // numbered pins, coloured by season (names show on hover and in the list)
   const pins = [];
-  g.textAlign = 'left';
+  const rr = W * 0.0125;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
   PLACES.forEach((p, n) => {
     const s = p.site ? SITES[p.site] : SITES.crash, m = toMap(s.x, s.z);
-    const x = toX(m.x), y = toY(m.y), rr = W * 0.017;
-    g.fillStyle = '#8b2b1f'; g.beginPath(); g.arc(x, y, rr, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#f4ecd8'; g.font = `600 ${Math.round(rr * 1.15)}px Jost, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const x = toX(m.x), y = toY(m.y);
+    g.fillStyle = '#f4ecd8'; g.beginPath(); g.arc(x, y, rr + 1.5, 0, Math.PI * 2); g.fill();
+    g.fillStyle = SEASON_COLOURS[p.season]; g.beginPath(); g.arc(x, y, rr, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#f4ecd8'; g.font = `600 ${Math.round(rr * 1.1)}px Jost, sans-serif`;
     g.fillText(String(n + 1), x, y + 1);
-    g.fillStyle = '#3d2f20'; g.font = `italic 600 ${Math.round(W * 0.021)}px "Cormorant Garamond", serif`; g.textAlign = 'left';
-    const label = p.name.replace(', south shore', '');
-    // label placement: right of the pin unless the place says otherwise
-    const [lx, ly, align] = LABELS[p.id] || [1.5, 0, 'left'];
-    g.textAlign = align;
-    g.fillText(label, x + lx * rr, y + ly * rr);
-    pins.push({ x, y, r: rr * 1.6, place: p });
+    pins.push({ x, y, r: rr * 1.8, place: p, n });
   });
   g.textBaseline = 'alphabetic';
-  return pins;
+  return { pins, base: g.getImageData(0, 0, W, H) };
+}
+
+// Highlight one pin with its name in a label.
+function highlight(canvas, drawn, pin) {
+  const g = canvas.getContext('2d');
+  g.putImageData(drawn.base, 0, 0);
+  if (!pin) return;
+  const W = canvas.width, label = pin.place.name.replace(', south shore', '');
+  g.font = `italic 600 ${Math.round(W * 0.024)}px "Cormorant Garamond", serif`;
+  const tw = g.measureText(label).width, pad = 8, h = W * 0.036;
+  let lx = pin.x + pin.r + 4, ly = pin.y - h / 2;
+  if (lx + tw + pad * 2 > W) lx = pin.x - pin.r - 4 - tw - pad * 2;
+  g.fillStyle = 'rgba(61,47,32,.92)'; g.beginPath(); g.roundRect(lx, ly, tw + pad * 2, h, 6); g.fill();
+  g.fillStyle = '#f4ecd8'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(label, lx + pad, pin.y + 1);
+  g.strokeStyle = '#3d2f20'; g.lineWidth = 2.5; g.beginPath(); g.arc(pin.x, pin.y, pin.r * 0.85, 0, Math.PI * 2); g.stroke();
+  g.textBaseline = 'alphabetic';
 }
 
 export function setupIslandMap({ onPick }) {
   const overlay = $('islandMap'), canvas = $('mapCanvas'), list = $('mapList');
-  let pins = null;
+  let drawn = null;
 
+  // the list, grouped by season
+  let season = null;
   PLACES.forEach((p, n) => {
+    if (p.season !== season) {
+      season = p.season;
+      const h = document.createElement('li'); h.className = 'season'; h.textContent = `Season ${season}`;
+      h.style.setProperty('--season', SEASON_COLOURS[season]);
+      list.appendChild(h);
+    }
     const li = document.createElement('li');
     const b = document.createElement('button');
     b.type = 'button';
-    b.innerHTML = `<span class="n">${n + 1}</span><span><b>${p.name}</b><small>${p.ref}</small></span>`;
+    b.innerHTML = `<span class="n" style="background:${SEASON_COLOURS[p.season]}">${n + 1}</span><span><b>${p.name}</b><small>${p.ref}</small></span>`;
     b.addEventListener('click', () => { close(); onPick(p); });
+    b.addEventListener('mouseenter', () => drawn && highlight(canvas, drawn, drawn.pins[n]));
+    b.addEventListener('mouseleave', () => drawn && highlight(canvas, drawn, null));
     li.appendChild(b); list.appendChild(li);
   });
   const overview = document.createElement('li');
@@ -102,7 +119,7 @@ export function setupIslandMap({ onPick }) {
 
   function open() {
     overlay.hidden = false;
-    if (!pins) pins = drawMap(canvas);   // drawn the first time the map opens
+    if (!drawn) drawn = drawMap(canvas);   // drawn the first time the map opens
     $('mapBtn').setAttribute('aria-expanded', 'true');
     $('mapClose').focus();
   }
@@ -117,11 +134,22 @@ export function setupIslandMap({ onPick }) {
     if (e.key === 'Escape' && !overlay.hidden) close();
     if ((e.key === 'm' || e.key === 'M') && document.activeElement?.tagName !== 'INPUT') overlay.hidden ? open() : close();
   });
-  canvas.addEventListener('click', (e) => {
-    if (!pins) return;
+  const pinAt = (e) => {
+    if (!drawn) return null;
     const r = canvas.getBoundingClientRect();
     const x = (e.clientX - r.left) / r.width * canvas.width, y = (e.clientY - r.top) / r.height * canvas.height;
-    const hit = pins.find((p) => Math.hypot(p.x - x, p.y - y) < p.r * 1.4);
+    let best = null, bd = Infinity;
+    for (const p of drawn.pins) { const d = Math.hypot(p.x - x, p.y - y); if (d < p.r * 1.3 && d < bd) { best = p; bd = d; } }
+    return best;
+  };
+  let hovered = null;
+  canvas.addEventListener('mousemove', (e) => {
+    const p = pinAt(e);
+    if (p !== hovered) { hovered = p; highlight(canvas, drawn, p); canvas.style.cursor = p ? 'pointer' : 'default'; }
+  });
+  canvas.addEventListener('mouseleave', () => { hovered = null; drawn && highlight(canvas, drawn, null); });
+  canvas.addEventListener('click', (e) => {
+    const hit = pinAt(e);
     if (hit) { close(); onPick(hit.place); }
   });
 }

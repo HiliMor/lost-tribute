@@ -150,7 +150,7 @@ function frame() {
 
   camera.position.sub(shake);
   if (flight.update(dt)) camera.lookAt(controls.target); else controls.update(dt);
-  landmarks.update(dt);
+  landmarks.update(dt, elapsed);
   lights.update(camera, controls.target);
   // keep the camera above ground and water
   const floorY = Math.max(terrainH(camera.position.x, camera.position.z), 0) + 1.4;
