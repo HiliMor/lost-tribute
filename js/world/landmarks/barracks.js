@@ -108,11 +108,11 @@ export function createBarracks(scene) {
   return village;
 }
 
-// A DHARMA van: a VW bus in blue and white with the octagon on its side.
-function dharmaVan(x, z, ry) {
+// A DHARMA van: a VW bus in blue and white with the octagon on its side. `rusty` = decades abandoned.
+export function dharmaVan(x, z, ry, rusty = false) {
   const van = new THREE.Group();
-  const blue = new THREE.MeshStandardMaterial({ color: 0x3f6f9e, roughness: 0.5, metalness: 0.2 });
-  const white = new THREE.MeshStandardMaterial({ color: 0xece8dc, roughness: 0.5 });
+  const blue = new THREE.MeshStandardMaterial({ color: rusty ? 0x5a6a72 : 0x3f6f9e, roughness: rusty ? 0.9 : 0.5, metalness: 0.2 });
+  const white = new THREE.MeshStandardMaterial({ color: rusty ? 0xa89c86 : 0xece8dc, roughness: rusty ? 0.9 : 0.5 });
   const glass = new THREE.MeshStandardMaterial({ color: 0x1c2328, roughness: 0.2, metalness: 0.5 });
   const tyre = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.9 });
   const lower = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.9, 1.8), blue); lower.position.y = 0.85; van.add(lower);

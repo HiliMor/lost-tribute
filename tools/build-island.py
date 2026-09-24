@@ -32,6 +32,7 @@ SITES_FULL = {
     'tail': (795, 2022), 'arrow': (2220, 800), 'staff': (1765, 2380), 'pearl': (1905, 2660),
     'balloon': (2115, 1995), 'flame': (2230, 990), 'jacobsCabin': (1345, 1485), 'subDock': (2512, 1416),   # the pier on the inner basin's shore, not the label in the water
     'lookingGlass': (3738, 3040), 'orchid': (1370, 1665), 'jacobsCave': (2270, 3900),
+    'runwayA': (4112, 1842), 'runwayB': (4282, 1998), 'room23': (4290, 1705), 'dharmaVan': (2515, 3090),
 }
 
 im = Image.open(sys.argv[1]).convert('RGB')

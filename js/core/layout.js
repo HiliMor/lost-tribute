@@ -26,6 +26,8 @@ export const ISLAND = META.centre;
 // Landmark positions, read off the map (ground height is taken from the terrain at runtime).
 // The wreck itself keeps its place on the hand-built crash beach.
 export const SITES = { ...META.sites, crash: { x: 4, z: 11 } };
+// the middle of the Hydra runway, so the whole strip is levelled
+SITES.runwayM = { x: (SITES.runwayA.x + SITES.runwayB.x) / 2, z: (SITES.runwayA.z + SITES.runwayB.z) / 2 };
 
 // Open ground around landmarks: the terrain is levelled there and no jungle is planted.
 // `r` = radius in metres, `flat` = how strongly the ground is levelled (0..1).
@@ -53,4 +55,9 @@ export const CLEARINGS = [
   { site: 'tail',       r: 30,  flat: 0 },
   { site: 'subDock',    r: 30,  flat: 0 },
   { site: 'jacobsCave', r: 25,  flat: 0 },
+  { site: 'runwayA',    r: 45,  flat: 0.8 },
+  { site: 'runwayB',    r: 45,  flat: 0.8 },
+  { site: 'runwayM',    r: 45,  flat: 0.8 },
+  { site: 'room23',     r: 18,  flat: 0.7 },
+  { site: 'dharmaVan',  r: 14,  flat: 0.5 },
 ];

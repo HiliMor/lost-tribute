@@ -9,11 +9,12 @@ A fan-made tribute to *LOST*, which premiered on 22 September 2004. It shows the
 ## What's in it
 
 - **The whole Island**, traced from [Choekaas's map of the Island](https://i.imgur.com/NrhXLUu.jpeg) (updated fall 2024), the map [r/lost recommends as the most accurate](https://www.reddit.com/r/lost/comments/1h8lpkr/which_map_of_the_island_is_most_accurate/). The coastline, the mountains and every landmark's position come from his map; the island map in the app is drawn north-up like his. Around the camp, the hand-built crash beach takes over. Distances are true to the map's scale (the island is about 2 km across).
-- **An island map** (press **M**) with **25 places from the show**, grouped by season. Click a pin or a name to fly there; each place says which episode it's from:
+- **An island map** (press **M**) with **27 places from the show**, grouped by season. Click a pin or a name to fly there; each place says which episode it's from:
   - **Season 1:** crash site, the Cockpit, the Caves, the Golf Course, Rousseau's shelter, the Beechcraft, the Hatch, the Black Rock, the Radio Tower
   - **Season 2:** the Tail Section, the Arrow, the Staff, the Pearl, Henry Gale's balloon, the Statue of Taweret
-  - **Season 3:** the Barracks, Hydra Island, the Flame, the Submarine dock, Jacob's cabin, the Looking Glass
+  - **Season 3:** the Barracks, Hydra Island (with Room 23 and the bear cages), Hurley's DHARMA van, the Flame, the Submarine dock, Jacob's cabin, the Looking Glass
   - **Season 4:** the Orchid
+  - **Season 5:** the Hydra runway and the wreck of Ajira 316
   - **Season 6:** the Temple, the Lighthouse, Jacob's cave
 - Every place has its own link, e.g. [#black-rock](https://hilimor.github.io/lost-tribute/#black-rock) or [#statue](https://hilimor.github.io/lost-tribute/#statue)
 - A shader-driven ocean with foam and shallows on every coast

@@ -92,6 +92,11 @@ export const PLACES = [
     site: 'hydra', lift: 3, dist: 90, rise: 28,
   },
   {
+    id: 'dharmaVan', season: 3, name: 'The DHARMA van', ref: 'Season 3 · "Tricia Tanaka Is Dead"',
+    text: "Hurley found this van overturned in the jungle, with a DHARMA worker's skeleton inside. He got it running by rolling it downhill.",
+    site: 'dharmaVan', lift: 1.2, dist: 11, rise: 3,
+  },
+  {
     id: 'flame', season: 3, name: 'The Flame', ref: 'Season 3 · "Enter 77"',
     text: "DHARMA's communication station, a farmhouse with a satellite dish. Locke typed 77 into its computer and blew it up.",
     site: 'flame', lift: 3, dist: 60, rise: 18, clear: 45,
@@ -115,6 +120,11 @@ export const PLACES = [
     id: 'orchid', season: 4, name: 'The Orchid', ref: 'Season 4 · "There\'s No Place Like Home"',
     text: 'Under this greenhouse, Ben turned the frozen wheel and moved the whole island.',
     site: 'orchid', lift: 2, dist: 32, rise: 10, clear: 30,
+  },
+  {
+    id: 'ajira', season: 5, name: 'The Hydra runway and Ajira 316', ref: 'Season 5 · "Namaste"',
+    text: 'The Others made Kate and Sawyer break rocks here, without telling them it was a runway. Three years later Ajira Flight 316 came down on it.',
+    site: 'runwayB', lift: 3, dist: 75, rise: 26,
   },
   {
     id: 'temple', season: 6, name: 'The Temple', ref: 'Season 6 · "LA X"',

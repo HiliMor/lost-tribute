@@ -5,6 +5,8 @@ import { SITES } from '../../core/layout.js';
 import { terrainH, landDist, seaDir, toCoastDistance } from '../../core/terrain-math.js';
 import { R, shadowy, canvasTex } from '../../core/utils.js';
 import { stoneMaterial, gableRoof, strut } from './materials.js';
+import { dharmaVan } from './barracks.js';
+import { surfaceH } from '../terrain.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const ground = (s) => terrainH(s.x, s.z);
@@ -337,6 +339,23 @@ function createJacobsCave(scene) {
   scene.add(shadowy(g));
 }
 
+// Hurley's DHARMA van: rusted and overgrown in the jungle, where he found Roger Workman's skeleton
+// and got it running by rolling it downhill ("Tricia Tanaka Is Dead", season 3).
+function createDharmaVan(scene) {
+  const s = SITES.dharmaVan;
+  const van = dharmaVan(s.x, s.z, 1.1, true);
+  van.position.y = surfaceH(s.x, s.z);
+  van.rotation.z = 0.05;
+  // rust streaks and vines
+  const rust = new THREE.MeshStandardMaterial({ color: 0x7a3c1c, roughness: 1 });
+  for (let i = 0; i < 12; i++) { const p = new THREE.Mesh(new THREE.BoxGeometry(R(0.3, 0.9), R(0.2, 0.6), 0.02), rust); const side = i % 2 ? 1 : -1; p.position.set(R(-1.8, 1.8), R(0.5, 1.6), side * 0.915); van.add(p); }
+  const vine = new THREE.MeshStandardMaterial({ color: 0x2f4a1c, roughness: 0.9 });
+  for (let i = 0; i < 10; i++) { const x = R(-2, 2); van.add(strut(V(x, 2.2, R(-0.9, 0.9)), V(x + R(-0.3, 0.3), R(0.3, 1.2), 0.95 * (i % 2 ? 1 : -1)), 0.03, vine, 4)); }
+  const beer = new THREE.MeshStandardMaterial({ color: 0x3a5a2a, roughness: 0.2, metalness: 0.3 });
+  for (let i = 0; i < 6; i++) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.22, 8), beer); b.position.set(R(-3, 3), 0.1, R(1.5, 3)); b.rotation.z = Math.PI / 2; van.add(b); }
+  scene.add(shadowy(van));
+}
+
 export function createStoryPlaces(scene) {
   createCockpit(scene);
   createCaves(scene);
@@ -346,4 +365,5 @@ export function createStoryPlaces(scene) {
   createBalloon(scene);
   createJacobsCabin(scene);
   createJacobsCave(scene);
+  createDharmaVan(scene);
 }

@@ -5,7 +5,7 @@ import { terrainH } from '../core/terrain-math.js';
 import { SITES, toWorld, toMap } from '../core/layout.js';
 import { PLACES, OVERVIEW } from './places.js';
 
-export const SEASON_COLOURS = { 1: '#8b2b1f', 2: '#2f5d7c', 3: '#4a6b2a', 4: '#7a4f8a', 6: '#a9761d' };
+export const SEASON_COLOURS = { 1: '#8b2b1f', 2: '#2f5d7c', 3: '#4a6b2a', 4: '#7a4f8a', 5: '#2f7a78', 6: '#a9761d' };
 
 // The part of Choekaas's map shown, in map pixels (north is up, as on his map).
 const BOUNDS = { x0: 30, x1: 1200, y0: 20, y1: 1000 };
