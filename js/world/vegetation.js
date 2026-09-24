@@ -3,7 +3,7 @@
 import * as THREE from 'three/webgpu';
 import {
   float, vec2, vec3, sin, dot, normalize, mix, smoothstep, max, pow, abs, fract, floor, hash, step, select,
-  uv, attribute, positionLocal, positionWorld, cameraPosition, vertexColor, mx_noise_float
+  uv, attribute, positionLocal, positionWorld, normalLocal, cameraPosition, vertexColor, mx_noise_float
 } from 'three/tsl';
 import { h2, shoreZ, terrainH, landDist, seaDir, WORLD_BOUNDS } from '../core/terrain-math.js';
 import { SITES, CLEARINGS } from '../core/layout.js';
@@ -240,7 +240,13 @@ function createJungle(scene) {
   const N = isPhone ? 5500 : 11000;
   const open = CLEARINGS.map((c) => ({ x: SITES[c.site].x, z: SITES[c.site].z, r: c.r }));
   const inClearing = (x, z) => open.some((c) => Math.hypot(x - c.x, z - c.z) < c.r);
-  const canopy = new THREE.InstancedMesh(blobGeo, new THREE.MeshStandardMaterial({ roughness: 0.92 }), N);
+  // leafy surface: clumps of foliage with dark gaps and shaded undersides (the instance colour tints it)
+  const canopyMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.9 });
+  const clump = mx_noise_float(positionWorld.mul(0.9)).mul(0.5).add(0.5);
+  const fine = mx_noise_float(positionWorld.mul(3.7)).mul(0.5).add(0.5);
+  const under = smoothstep(-0.6, 0.5, normalLocal.y);
+  canopyMat.colorNode = vec3(mix(float(0.45), float(1.25), smoothstep(0.25, 0.75, clump)).mul(fine.mul(0.35).add(0.8)).mul(under.mul(0.55).add(0.45)));
+  const canopy = new THREE.InstancedMesh(blobGeo, canopyMat, N);
   const greens = ['#24361a', '#2d4420', '#1d2e16', '#3a4d22', '#2a3d27', '#33471c'].map((c) => new THREE.Color(c));
   let n = 0, tries = 0;
   while (n < N && tries < 160000) {

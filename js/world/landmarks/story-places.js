@@ -2,7 +2,7 @@
 // the tail section, Henry Gale's balloon, Jacob's cabin and Jacob's cave. Positions from Choekaas's map.
 import * as THREE from 'three/webgpu';
 import { SITES } from '../../core/layout.js';
-import { terrainH, seaDir, toCoastDistance } from '../../core/terrain-math.js';
+import { terrainH, landDist, seaDir, toCoastDistance } from '../../core/terrain-math.js';
 import { R, shadowy, canvasTex } from '../../core/utils.js';
 import { stoneMaterial, gableRoof, strut } from './materials.js';
 
@@ -19,35 +19,94 @@ function rockPile(g, mat, n, spread, size, y = 0) {
   }
 }
 
-// The cockpit, torn off the plane and lodged in the trees ("Pilot", season 1).
+// The cockpit, torn off the plane and lodged in the trees ("Pilot", season 1): the nose with its
+// window frames, a ragged torn edge trailing cables, the two pilot seats inside, and snapped trees.
 function createCockpit(scene) {
   const g = new THREE.Group();
-  const white = new THREE.MeshStandardMaterial({ color: 0xdedbd2, roughness: 0.6, metalness: 0.2 });
-  const dark = new THREE.MeshStandardMaterial({ color: 0x151a1e, roughness: 0.3 });
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(2.9, 2.9, 7, 32, 1, true), white);
-  body.material.side = THREE.DoubleSide; body.rotation.z = Math.PI / 2; g.add(body);
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(2.9, 32, 16, 0, Math.PI), white);
-  nose.rotation.y = -Math.PI / 2; nose.scale.set(1, 1, 1.5); nose.position.x = 3.5; g.add(nose);
-  for (const z of [-1, 1]) { const w = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 1.1), dark); w.position.set(5.4, 1.1, z * 0.8); w.rotation.z = -0.5; g.add(w); }
-  const stripe = new THREE.Mesh(new THREE.CylinderGeometry(2.93, 2.93, 7, 32, 1, true), new THREE.MeshStandardMaterial({ color: 0x1d3160, side: THREE.DoubleSide }));
-  stripe.rotation.z = Math.PI / 2; stripe.scale.set(1, 1, 0.08); stripe.position.y = -0.3; g.add(stripe);
-  const s = SITES.cockpit;
-  g.position.set(s.x, ground(s) + 3.5, s.z);
+  const paint = new THREE.MeshStandardMaterial({ color: 0xdedbd2, roughness: 0.6, metalness: 0.2, side: THREE.DoubleSide });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x0d1114, roughness: 0.25, metalness: 0.4 });
+  const inner = new THREE.MeshStandardMaterial({ color: 0x2d3036, roughness: 0.9, side: THREE.BackSide });
+  // fuselage stub with a jagged torn end (along +x towards the nose)
+  const body = new THREE.CylinderGeometry(2.9, 2.9, 6, 36, 6, true);
+  const bp = body.attributes.position;
+  for (let i = 0; i < bp.count; i++) {
+    const y = bp.getY(i);
+    if (y < -2.99) { const a = Math.atan2(bp.getZ(i), bp.getX(i)); bp.setY(i, y + 0.8 * Math.abs(Math.sin(a * 3.1)) + 0.5 * Math.abs(Math.sin(a * 7.3)) + R(0, 0.4)); }
+  }
+  body.computeVertexNormals();
+  const shell = new THREE.Mesh(body, paint); shell.rotation.z = -Math.PI / 2; g.add(shell);
+  const lining = new THREE.Mesh(body.clone().scale(0.95, 1, 0.95), inner); lining.rotation.z = -Math.PI / 2; g.add(lining);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(2.9, 36, 18, 0, Math.PI), paint);
+  nose.rotation.y = -Math.PI / 2; nose.scale.set(1, 1, 1.45); nose.position.x = 3; g.add(nose);
+  const radome = new THREE.Mesh(new THREE.SphereGeometry(1.1, 20, 12), new THREE.MeshStandardMaterial({ color: 0x3a3f46, roughness: 0.5 }));
+  radome.scale.set(0.8, 1, 1); radome.position.set(6.8, -0.6, 0); g.add(radome);
+  // six cockpit window panes across the top of the nose
+  for (let i = 0; i < 6; i++) {
+    const a = (i - 2.5) * 0.28;
+    const w = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.55, 0.62), dark);
+    w.position.set(5.1, 1.55, Math.sin(a) * 2.2); w.rotation.set(a * 0.9, -a, -0.55); g.add(w);
+  }
+  // the navy cheat line
+  const stripe = new THREE.Mesh(new THREE.CylinderGeometry(2.93, 2.93, 6, 36, 1, true), new THREE.MeshStandardMaterial({ color: 0x1d3160, side: THREE.DoubleSide }));
+  stripe.rotation.z = Math.PI / 2; stripe.scale.set(1, 1, 0.08); stripe.position.y = -0.4; g.add(stripe);
+  // pilot seats seen through the tear
+  const seatM = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.8 });
+  for (const z of [-0.8, 0.8]) {
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.18, 0.6), seatM); seat.position.set(2.2, -0.8, z); g.add(seat);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1, 0.6), seatM); back.position.set(1.9, -0.3, z); g.add(back);
+  }
+  // cables hanging from the torn end
+  const cable = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7 });
+  for (let i = 0; i < 9; i++) { const a = R(0, Math.PI * 2); g.add(strut(V(-3, Math.sin(a) * 2.6, Math.cos(a) * 2.6), V(-3.6 - R(0, 1), Math.sin(a) * 2.6 - R(1, 3), Math.cos(a) * 2.6 + R(-0.5, 0.5)), 0.03, cable, 4)); }
+  const s = SITES.cockpit, y0 = ground(s);
+  g.position.set(s.x, y0 + 3.5, s.z);
   g.rotation.set(0.25, 0.6, -0.35);
-  scene.add(shadowy(g));
+  // snapped tree trunks it crashed through
+  const bark = new THREE.MeshStandardMaterial({ color: 0x4a3b2c, roughness: 1 });
+  const trees = new THREE.Group();
+  for (let i = 0; i < 6; i++) {
+    const a = R(0, Math.PI * 2), r = R(5, 11), h = R(2, 6);
+    const x = s.x + Math.cos(a) * r, z = s.z + Math.sin(a) * r, y = terrainH(x, z);
+    trees.add(strut(V(x, y - 0.3, z), V(x + R(-0.4, 0.4), y + h, z + R(-0.4, 0.4)), R(0.25, 0.45), bark, 7));
+    if (i % 2 === 0) trees.add(strut(V(x, y + h, z), V(x + R(-5, 5), y + 0.3, z + R(-5, 5)), R(0.2, 0.35), bark, 7));
+  }
+  scene.add(shadowy(g), shadowy(trees));
 }
 
-// The caves, with fresh water, where half the survivors moved ("White Rabbit", season 1).
+// The caves, with fresh water, where half the survivors moved ("White Rabbit", season 1):
+// a cliff face with a dark cave mouth, a stream running out into a pool, a fire ring and water bottles.
 function createCaves(scene) {
   const g = new THREE.Group();
-  const rock = stoneMaterial('#5d564c', { moss: 0.5, scale: 0.3 });
-  rockPile(g, rock, 14, 12, 6);
-  const mouth = new THREE.Mesh(new THREE.CircleGeometry(3.2, 20), new THREE.MeshBasicMaterial({ color: 0x050403 }));
-  mouth.position.set(0, 2.6, 5.8); mouth.scale.y = 0.8; g.add(mouth);
-  const pool = new THREE.Mesh(new THREE.CircleGeometry(4, 24), new THREE.MeshStandardMaterial({ color: 0x1b3a3a, roughness: 0.05, metalness: 0.3 }));
-  pool.rotation.x = -Math.PI / 2; pool.position.set(-3, 0.15, 10); g.add(pool);
-  const s = SITES.caves;
-  g.position.set(s.x, ground(s) - 0.5, s.z);
+  const rock = stoneMaterial('#6a6255', { moss: 0.55, scale: 0.35 });
+  // the cliff: a row of big boulders stacked into a wall
+  for (let i = 0; i < 16; i++) {
+    const r = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 1), rock);
+    const x = R(-14, 14), top = R(0, 1) < 0.5;
+    r.position.set(x, top ? R(6, 10) : R(1, 5), R(-7, -2) - Math.abs(x) * 0.15);
+    r.scale.set(R(2.5, 4.5), R(2, 3.8), R(2.5, 4));
+    r.rotation.set(R(0, 6), R(0, 6), R(0, 6));
+    g.add(r);
+  }
+  // the cave mouth: a dark arch going back into the rock
+  const tunnel = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 10, 20, 1, true, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x060504, side: THREE.DoubleSide }));
+  tunnel.rotation.set(Math.PI / 2, 0, Math.PI / 2); tunnel.position.set(0, 0.1, -3); g.add(tunnel);
+  const back = new THREE.Mesh(new THREE.CircleGeometry(2.8, 20, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x030202 }));
+  back.position.set(0, 0.1, -7.9); g.add(back);
+  // a stream out of the cave into a pool
+  const water = new THREE.MeshStandardMaterial({ color: 0x1f4448, roughness: 0.04, metalness: 0.3 });
+  const stream = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 9), water); stream.rotation.x = -Math.PI / 2; stream.position.set(0.6, 0.12, 3); g.add(stream);
+  const pool = new THREE.Mesh(new THREE.CircleGeometry(3.6, 28), water); pool.rotation.x = -Math.PI / 2; pool.position.set(1.5, 0.1, 8.5); g.add(pool);
+  const pebbles = new THREE.MeshStandardMaterial({ color: 0x55504a, roughness: 0.9, flatShading: true });
+  for (let i = 0; i < 26; i++) { const a = i / 26 * Math.PI * 2, p = new THREE.Mesh(new THREE.DodecahedronGeometry(R(0.2, 0.45)), pebbles); p.position.set(1.5 + Math.cos(a) * 3.8, 0.1, 8.5 + Math.sin(a) * 3.8); g.add(p); }
+  // a fire ring and the survivors' water bottles
+  const ash = new THREE.Mesh(new THREE.CircleGeometry(0.7, 16), new THREE.MeshStandardMaterial({ color: 0x1c1a18, roughness: 1 }));
+  ash.rotation.x = -Math.PI / 2; ash.position.set(-5, 0.08, 4); g.add(ash);
+  for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2, st = new THREE.Mesh(new THREE.DodecahedronGeometry(0.2), pebbles); st.position.set(-5 + Math.cos(a) * 0.8, 0.1, 4 + Math.sin(a) * 0.8); g.add(st); }
+  const bottle = new THREE.MeshStandardMaterial({ color: 0xa8c8d8, roughness: 0.1, transparent: true, opacity: 0.6 });
+  for (let i = 0; i < 8; i++) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.3, 8), bottle); b.position.set(-2.5 + i * 0.18, 0.25, 5.2 + R(-0.1, 0.1)); g.add(b); }
+  const s = SITES.caves, sea = seaDir(s.x, s.z);
+  g.position.set(s.x, ground(s) - 0.2, s.z);
+  g.rotation.y = Math.atan2(sea.x, sea.z);   // the cave mouth looks downhill, towards the sea
   scene.add(shadowy(g));
 }
 
@@ -85,27 +144,60 @@ function createRousseau(scene) {
   scene.add(shadowy(g));
 }
 
-// The tail section, which crashed on the far side of the island ("The Other 48 Days", season 2).
+// The tail section, which crashed on the far side of the island ("The Other 48 Days", season 2):
+// the tail cone and fin with the Oceanic logo, and the rows of seats and luggage strewn up the beach.
 function createTail(scene) {
   const g = new THREE.Group();
-  const white = new THREE.MeshStandardMaterial({ color: 0xe4e2da, roughness: 0.55, metalness: 0.2 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xe4e2da, roughness: 0.55, metalness: 0.2, side: THREE.DoubleSide });
   const logo = canvasTex(512, 512, (c, W) => {
     c.fillStyle = '#e4e2da'; c.fillRect(0, 0, W, W);
     c.translate(W / 2, W / 2);
     for (let i = 0; i < 6; i++) { c.rotate(Math.PI / 3); c.fillStyle = i % 2 ? '#b3202e' : '#1d3160'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, 120, 0, Math.PI / 3.6); c.closePath(); c.fill(); }
     c.fillStyle = '#e4e2da'; c.beginPath(); c.arc(0, 0, 45, 0, Math.PI * 2); c.fill();
   });
-  const cone = new THREE.Mesh(new THREE.CylinderGeometry(3, 0.9, 12, 24, 1, true), white);
-  cone.material.side = THREE.DoubleSide; cone.rotation.z = Math.PI / 2; g.add(cone);
+  const coneGeo = new THREE.CylinderGeometry(3, 0.9, 12, 28, 4, true);
+  const cp = coneGeo.attributes.position;
+  for (let i = 0; i < cp.count; i++) if (cp.getY(i) > 5.99) { const a = Math.atan2(cp.getZ(i), cp.getX(i)); cp.setY(i, cp.getY(i) - 0.7 * Math.abs(Math.sin(a * 2.7)) - R(0, 0.4)); }
+  coneGeo.computeVertexNormals();
+  const cone = new THREE.Mesh(coneGeo, white); cone.rotation.z = Math.PI / 2; g.add(cone);
+  const stripe = new THREE.Mesh(new THREE.CylinderGeometry(3.03, 0.93, 12, 28, 1, true), new THREE.MeshStandardMaterial({ color: 0x1d3160, side: THREE.DoubleSide }));
+  stripe.rotation.z = Math.PI / 2; stripe.scale.set(1, 1, 0.07); stripe.position.y = -0.3; g.add(stripe);
   const shape = new THREE.Shape(); shape.moveTo(0, 0); shape.lineTo(7, 0); shape.lineTo(9.5, 8); shape.lineTo(6.5, 8); shape.closePath();
-  const fin = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.3, bevelEnabled: false }), [new THREE.MeshStandardMaterial({ map: logo, roughness: 0.55 }), white]);
-  fin.geometry.computeBoundingBox();
-  const uvs = fin.geometry.attributes.uv; for (let i = 0; i < uvs.count; i++) uvs.setXY(i, uvs.getX(i) / 10, uvs.getY(i) / 8);
+  const finGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.3, bevelEnabled: false });
+  const uvs = finGeo.attributes.uv; for (let i = 0; i < uvs.count; i++) uvs.setXY(i, uvs.getX(i) / 10, uvs.getY(i) / 8);
+  const fin = new THREE.Mesh(finGeo, [new THREE.MeshStandardMaterial({ map: logo, roughness: 0.55 }), white]);
   fin.position.set(-6, 1.5, -0.15); g.add(fin);
+  // horizontal stabilisers
+  for (const sd of [-1, 1]) { const st = new THREE.Mesh(new THREE.BoxGeometry(3, 0.2, 4.5), white); st.position.set(-4.5, 0.4, sd * 3); st.rotation.set(sd * 0.1, sd * 0.35, 0); g.add(st); }
   const p = toCoastDistance(SITES.tail, 8), sea = seaDir(p.x, p.z);
   g.position.set(p.x, terrainH(p.x, p.z) + 1.4, p.z);
   g.rotation.set(0.15, Math.atan2(sea.z, -sea.x), 0.1);
   scene.add(shadowy(g));
+  // wreckage strewn along the beach
+  const debris = new THREE.Group();
+  const fab = new THREE.MeshStandardMaterial({ color: 0x2b4f86, roughness: 0.9 });
+  const frame = new THREE.MeshStandardMaterial({ color: 0x55585e, metalness: 0.6, roughness: 0.4 });
+  const along = { x: -sea.z, z: sea.x };
+  for (let i = 0; i < 26; i++) {
+    const u = R(-28, 28), w = R(2, 14);
+    const x = p.x + along.x * u - sea.x * (w - 6), z = p.z + along.z * u - sea.z * (w - 6);
+    if (landDist(x, z) < 1) continue;
+    let m;
+    if (i % 3 === 0) {
+      m = new THREE.Group();
+      for (let k2 = 0; k2 < 3; k2++) {
+        const c = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.14, 0.5), fab); c.position.set(k2 * 0.55, 0.45, 0);
+        const b = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.75, 0.12), fab); b.position.set(k2 * 0.55, 0.85, -0.24);
+        m.add(c, b);
+      }
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.06, 0.06), frame); rail.position.set(0.55, 0.3, 0); m.add(rail);
+    } else {
+      m = new THREE.Mesh(new THREE.BoxGeometry(R(0.45, 0.8), R(0.22, 0.32), R(0.3, 0.55)), new THREE.MeshStandardMaterial({ color: [0x7a1e1e, 0x1f3b5a, 0x3b3b3b, 0x6b4a2b, 0xa07a3a][i % 5], roughness: 0.8 }));
+    }
+    m.position.set(x, terrainH(x, z) + 0.1, z); m.rotation.set(R(-0.3, 0.3), R(0, 6.28), R(-0.6, 0.6));
+    debris.add(m);
+  }
+  scene.add(shadowy(debris));
 }
 
 // Henry Gale's balloon, caught in the trees where the real Henry Gale was buried ("The Whole Truth", season 2).
@@ -126,16 +218,35 @@ function createBalloon(scene) {
   scene.add(shadowy(g));
 }
 
-// Jacob's cabin, ringed by a line of ash ("The Man Behind the Curtain", season 3).
+// Jacob's cabin, ringed by a line of ash ("The Man Behind the Curtain", season 3): a log cabin with a
+// porch, a stovepipe chimney and a dim lamp in the window.
 function createJacobsCabin(scene) {
   const g = new THREE.Group();
-  const wood = new THREE.MeshStandardMaterial({ color: 0x4d3b2b, roughness: 1 });
-  const walls = new THREE.Mesh(new THREE.BoxGeometry(5, 2.8, 4), wood); walls.position.y = 1.4; g.add(walls);
-  const roof = new THREE.Mesh(gableRoof(5.8, 4.8, 1.6), new THREE.MeshStandardMaterial({ color: 0x3a2e24, roughness: 1, side: THREE.DoubleSide }));
-  roof.position.y = 2.8; g.add(roof);
-  const win = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, 0.05), new THREE.MeshBasicMaterial({ color: 0xffc070 }));
-  win.position.set(1.3, 1.7, 2.03); g.add(win);
-  const ash = new THREE.Mesh(new THREE.RingGeometry(8, 8.6, 64), new THREE.MeshStandardMaterial({ color: 0x9a968e, roughness: 1 }));
+  const logM = new THREE.MeshStandardMaterial({ color: 0x5a4533, roughness: 1 });
+  // log walls: stacked logs that overlap at the corners
+  for (let row = 0; row < 8; row++) {
+    const y = 0.2 + row * 0.34;
+    for (const z of [-2, 2]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 5.6, 8), logM); l.rotation.z = Math.PI / 2; l.position.set(0, y, z); g.add(l); }
+    for (const x of [-2.6, 2.6]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 4.6, 8), logM); l.rotation.x = Math.PI / 2; l.position.set(x, y + 0.17, 0); g.add(l); }
+  }
+  const infill = new THREE.Mesh(new THREE.BoxGeometry(5.1, 2.7, 3.9), new THREE.MeshStandardMaterial({ color: 0x3e3024, roughness: 1 }));
+  infill.position.y = 1.4; g.add(infill);
+  const roof = new THREE.Mesh(gableRoof(6.4, 5.2, 1.7), new THREE.MeshStandardMaterial({ color: 0x33291f, roughness: 1, side: THREE.DoubleSide }));
+  roof.position.y = 2.95; g.add(roof);
+  // porch, steps and door
+  const plank = new THREE.MeshStandardMaterial({ color: 0x6b553e, roughness: 1 });
+  const porch = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.15, 1.6), plank); porch.position.set(0, 0.35, 2.9); g.add(porch);
+  for (const x of [-2.4, 2.4]) g.add(strut(V(x, 0.35, 3.6), V(x, 2.95, 3.6), 0.08, logM, 6));
+  const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.1, 1.9), plank); porchRoof.position.set(0, 2.95, 2.95); porchRoof.rotation.x = -0.15; g.add(porchRoof);
+  for (let i = 0; i < 2; i++) { const st = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.15, 0.4), plank); st.position.set(0, 0.12 + i * 0.12, 3.9 + (1 - i) * 0.35); g.add(st); }
+  const door = new THREE.Mesh(new THREE.BoxGeometry(1, 1.9, 0.08), new THREE.MeshStandardMaterial({ color: 0x2a2018, roughness: 1 }));
+  door.position.set(-0.8, 1.3, 2.02); g.add(door);
+  const win = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, 0.05), new THREE.MeshBasicMaterial({ color: 0xffb860 }));
+  win.position.set(1.2, 1.6, 2.02); g.add(win);
+  const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 1.6, 10), new THREE.MeshStandardMaterial({ color: 0x2e2e2e, metalness: 0.6, roughness: 0.6 }));
+  pipe.position.set(1.8, 3.9, -0.8); g.add(pipe);
+  // the ring of ash
+  const ash = new THREE.Mesh(new THREE.RingGeometry(8, 8.6, 96), new THREE.MeshStandardMaterial({ color: 0x9a968e, roughness: 1 }));
   ash.rotation.x = -Math.PI / 2; ash.position.y = 0.08; g.add(ash);
   const s = SITES.jacobsCabin;
   g.position.set(s.x, ground(s), s.z); g.rotation.y = 0.5;

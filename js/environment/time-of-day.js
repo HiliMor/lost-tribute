@@ -10,7 +10,7 @@ import {
 import { lightState } from './lights.js';
 
 const KEYS = [
-  { t: 0.00, el: 13, zen: '#2e5d9e', hor: '#f2b87c', sun: '#ffd9a2', cloud: '#7a7390', deep: '#0b3b4b', shal: '#35b3a8', fog: '#d7ad85', light: 3.3, lcol: '#ffd6a8', hs: '#9fb8d8', hg: '#7a6444', hi: 0.8, exp: 0.66, smoke: '#b9a08a', foam: 1.0 },
+  { t: 0.00, el: 24, zen: '#2e5d9e', hor: '#f2b87c', sun: '#ffd9a2', cloud: '#7a7390', deep: '#0b3b4b', shal: '#35b3a8', fog: '#d7ad85', light: 3.3, lcol: '#ffd6a8', hs: '#9fb8d8', hg: '#7a6444', hi: 0.8, exp: 0.66, smoke: '#b9a08a', foam: 1.0 },
   { t: 0.40, el: 2.2, zen: '#1c3a78', hor: '#ff8a4c', sun: '#ffb070', cloud: '#453a5e', deep: '#0a2c3d', shal: '#22898a', fog: '#c67a5c', light: 2.2, lcol: '#ffa862', hs: '#7282b8', hg: '#4d3b30', hi: 0.6, exp: 0.95, smoke: '#9a6d5c', foam: 0.85 },
   { t: 0.60, el: -3.5, zen: '#0f1d48', hor: '#b2536a', sun: '#ff6a4a', cloud: '#2b2442', deep: '#061c2a', shal: '#0f4a55', fog: '#58395a', light: 0.25, lcol: '#ff7a50', hs: '#3a4474', hg: '#2a2020', hi: 0.4, exp: 1.15, smoke: '#4a3a4a', foam: 0.45 },
   { t: 1.00, el: -22, zen: '#02050f', hor: '#0c1a33', sun: '#8098ff', cloud: '#0c1222', deep: '#020a12', shal: '#052330', fog: '#0a1426', light: 0.0, lcol: '#ff7a50', hs: '#24346a', hg: '#0c0c14', hi: 0.45, exp: 1.9, smoke: '#1a2030', foam: 0.22 },
@@ -45,7 +45,7 @@ export function createTimeOfDay({ scene, renderer, hemi, sun, environment }) {
     uBeam.value = sstep(0.72, 0.95, t);
     scene.fog.color.copy(lerpKey(t, 'fog'));
     lightState.fogDensity = 0.0012 + uNight.value * 0.0008;
-    hemi.color.copy(lerpKey(t, 'hs')); hemi.groundColor.copy(lerpKey(t, 'hg')); hemi.intensity = lerpKey(t, 'hi') * 0.6;
+    hemi.color.copy(lerpKey(t, 'hs')); hemi.groundColor.copy(lerpKey(t, 'hg')); hemi.intensity = lerpKey(t, 'hi') * 0.85;
     environment.markDirty();
     renderer.toneMappingExposure = lerpKey(t, 'exp');
     // one directional light: the sun, handing over to the moon at dusk while both are dim

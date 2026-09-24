@@ -73,7 +73,7 @@ export function createEnvironment(renderer, scene) {
 
   const pmrem = new THREE.PMREMGenerator(renderer);
   let envRT = null, dirty = true, bakedAt = -1;
-  scene.environmentIntensity = 0.8;
+  scene.environmentIntensity = 0.9;
 
   function bake() {
     envRT = pmrem.fromScene(envScene, 0.02, 0.1, 100, { size: 128, renderTarget: envRT });

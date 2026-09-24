@@ -1,6 +1,6 @@
 // The places you can visit, with where the camera goes and a line of story for each.
 import * as THREE from 'three/webgpu';
-import { SITES, ISLAND } from '../core/layout.js';
+import { SITES, ISLAND, CLEARINGS } from '../core/layout.js';
 import { terrainH, seaDir, toCoastDistance } from '../core/terrain-math.js';
 import { uSunDir } from '../core/uniforms.js';
 
@@ -14,12 +14,12 @@ export const PLACES = [
   {
     id: 'cockpit', season: 1, name: 'The Cockpit', ref: 'Season 1 · "Pilot"',
     text: 'Jack, Kate and Charlie trekked into the jungle to find the transceiver. The pilot was still alive, until the Monster took him.',
-    site: 'cockpit', lift: 3, dist: 38, rise: 12, clear: 14,
+    site: 'cockpit', lift: 3, dist: 30, rise: 20, clear: 14,
   },
   {
     id: 'caves', season: 1, name: 'The Caves', ref: 'Season 1 · "White Rabbit"',
     text: 'Jack found fresh water in the caves, and half the survivors moved there. Inside lay "Adam and Eve", two old skeletons.',
-    site: 'caves', lift: 3, dist: 42, rise: 6,
+    site: 'caves', lift: 3, dist: 30, rise: 5, front: true,
   },
   {
     id: 'golf', season: 1, name: 'The Golf Course', ref: 'Season 1 · "Solitary"',
@@ -39,7 +39,7 @@ export const PLACES = [
   {
     id: 'hatch', season: 1, name: 'The Hatch', ref: 'Season 1 · "Deus Ex Machina"',
     text: 'Locke and Boone found a steel hatch buried in the jungle. Inside was the Swan station. Slide to night to see its light.',
-    site: 'hatch', lift: 1, dist: 20, rise: 8,
+    site: 'hatch', lift: 0, dist: 13, rise: 4,
   },
   {
     id: 'blackRock', season: 1, name: 'The Black Rock', ref: 'Season 1 · "Exodus"',
@@ -172,14 +172,23 @@ export function viewFor(place) {
     from.y = place.height;
     return { from, to };
   }
+  if (place.front) {
+    // look at the landmark's front, which faces downhill towards the sea
+    const f = seaDir(s.x, s.z), from = new THREE.Vector3(s.x + f.x * place.dist, 0, s.z + f.z * place.dist);
+    from.y = Math.max(to.y + place.rise, terrainH(from.x, from.z) + 6);
+    return { from, to };
+  }
   // inland: try every direction and keep the clearest one, preferring the side the sun lights
   const sun = new THREE.Vector2(uSunDir.value.x, uSunDir.value.z).normalize();
   let best = null;
   for (let k = 0; k < 32; k++) {
     const a = k / 32 * Math.PI * 2, dx = Math.cos(a), dz = Math.sin(a);
     const from = new THREE.Vector3(s.x + dx * place.dist, 0, s.z + dz * place.dist);
-    from.y = Math.max(to.y + place.rise, terrainH(from.x, from.z) + 15);   // stay above the treetops
-    const score = blocked(from, to, place.clear ?? 30) * 10 + (from.y - to.y - place.rise) - (dx * sun.x + dz * sun.y) * 4;
+    // stay above the treetops, unless the camera stands inside the landmark's own clearing
+    const clearing = CLEARINGS.find((c) => c.site === place.site);
+    const inClearing = clearing && place.dist < clearing.r * 0.8;
+    from.y = Math.max(to.y + place.rise, terrainH(from.x, from.z) + (inClearing ? 2.5 : 22));
+    const score = blocked(from, to, inClearing ? place.dist + 1 : place.clear ?? 30) * 10 + (from.y - to.y - place.rise) - (dx * sun.x + dz * sun.y) * 4;
     if (!best || score < best.score) best = { score, from };
   }
   return { from: best.from, to };

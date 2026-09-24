@@ -20,6 +20,7 @@ import { createVegetation } from './world/vegetation.js';
 import { createWildlife } from './world/wildlife.js';
 import { createHatch } from './world/hatch.js';
 import { createLandmarks } from './world/landmarks/index.js';
+import { createJungle } from './world/jungle.js';
 import { createFlight } from './core/camera-flight.js';
 
 import { audio, setupSoundButton } from './ui/audio.js';
@@ -76,6 +77,7 @@ createVegetation(scene);
 const wildlife = createWildlife(scene, camera);
 const hatch = createHatch(scene);
 const landmarks = createLandmarks(scene);
+createJungle(scene);
 createTimeOfDay({ scene, renderer, hemi, sun, environment });
 const pipeline = createPostProcessing(renderer, scene, camera);
 

@@ -1,6 +1,6 @@
 // The island ground: beach, dunes, jungle floor, hills and the two mountains.
 import * as THREE from 'three/webgpu';
-import { float, vec2, vec3, sin, mix, smoothstep, abs, positionWorld, vertexColor, mx_noise_float } from 'three/tsl';
+import { float, vec2, vec3, sin, mix, smoothstep, abs, length, positionWorld, vertexColor, mx_noise_float } from 'three/tsl';
 import { fbm, sstep, landDist, terrainH, WORLD_BOUNDS } from '../core/terrain-math.js';
 import { SITES } from '../core/layout.js';
 
@@ -44,7 +44,7 @@ export function createTerrain(scene) {
   const p = g.attributes.position, nrm = g.attributes.normal;
   const col = new Float32Array(p.count * 3);
   const C = (h) => new THREE.Color(h);
-  const wet = C('#8f7a58'), sand = C('#e2cfa2'), sand2 = C('#cdb487'), grass = C('#6f7536'), floor = C('#35451f'), rock = C('#4a433c'), seabed = C('#5f7a6a');
+  const wet = C('#8f7a58'), sand = C('#e2cfa2'), sand2 = C('#cdb487'), grass = C('#6f7536'), floor = C('#44552a'), rock = C('#4a433c'), seabed = C('#5f7a6a');
   const lawn = C('#6f8a3c'), dirt = C('#5c4f3a');
   const clearing = C('#56602e');
   const B = SITES.barracks, T = SITES.temple, K = SITES.blackRock, SH = SITES.hatch;
@@ -79,8 +79,16 @@ export function createTerrain(scene) {
   const dShore = pw.z.sub(sin(pw.x.mul(0.021)).mul(4.0).add(sin(pw.x.mul(0.057).add(1.3)).mul(2.5)));
   const wn = mx_noise_float(vec3(pw.xz.mul(vec2(0.35, 0.9)), 1.7));
   const wrack = smoothstep(0.0, 0.55, abs(dShore.sub(3.9).sub(wn.mul(0.9)))).oneMinus()
-    .mul(smoothstep(-0.1, 0.35, mx_noise_float(vec3(pw.xz.mul(vec2(0.6, 2.5)), 4.2)))).mul(0.75);
-  mat.colorNode = mix(vertexColor().mul(grain.add(ripple).add(1.0)).mul(mix(1.0, 0.62, wetF)), vec3(0.11, 0.095, 0.05), wrack);
+    .mul(smoothstep(-0.1, 0.35, mx_noise_float(vec3(pw.xz.mul(vec2(0.6, 2.5)), 4.2)))).mul(0.75)
+    .mul(smoothstep(90.0, 160.0, length(pw.xz.sub(vec2(4.0, 5.0)))).oneMinus());   // only on the crash beach
+  // jungle floor: fallen leaves and moss, mottled at two scales
+  const vc = vertexColor();
+  const jungleF = smoothstep(0.004, 0.03, vc.g.sub(vc.r)).mul(0.75);
+  const mossN = mx_noise_float(pw.mul(0.22).add(3.0));
+  const leafN = mx_noise_float(pw.mul(1.7)).mul(0.5).add(0.5);
+  const litter = mix(vec3(0.1, 0.07, 0.035), vec3(0.055, 0.1, 0.03), smoothstep(-0.25, 0.35, mossN)).mul(leafN.mul(0.6).add(0.7));
+  const ground = mix(vc.mul(grain.add(ripple).add(1.0)).mul(mix(1.0, 0.62, wetF)), litter, jungleF);
+  mat.colorNode = mix(ground, vec3(0.11, 0.095, 0.05), wrack);
   mat.roughnessNode = mix(float(0.95), float(0.32), wetF);
 
   const terrain = new THREE.Mesh(g, mat);

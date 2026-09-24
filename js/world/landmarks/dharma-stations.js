@@ -55,12 +55,20 @@ function createStaff(scene, concrete, dark) {
   scene.add(shadowy(g));
 }
 
-// The Arrow: a half-buried concrete bunker where the tail section survivors hid ("The Other 48 Days").
+// The Arrow: a half-buried concrete bunker where the tail section survivors hid ("The Other 48 Days"):
+// a sloping concrete front with a heavy door at the bottom of a short flight of steps.
 function createArrow(scene, concrete, dark) {
   const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(6, 2.2, 5), concrete); body.position.y = 0.6; body.rotation.x = 0.06; g.add(body);
-  const door = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 0.1), dark); door.position.set(0, 0.8, 2.53); g.add(door);
-  const logo = logoPlate('↑', 0.8); logo.position.set(1.8, 1.1, 2.53); g.add(logo);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(7, 2.2, 6), concrete); body.position.set(0, 0.4, -1); g.add(body);
+  const mound = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x3f4e27, roughness: 1 }));
+  mound.scale.set(1.3, 0.5, 1.1); mound.position.set(0, 0.8, -2.5); g.add(mound);
+  // stairwell down to the door
+  for (let i = 0; i < 5; i++) { const st = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.25, 0.5), concrete); st.position.set(0, -0.15 - i * 0.25, 3.2 - i * 0.45); g.add(st); }
+  for (const x of [-1.15, 1.15]) { const w = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.4, 2.8), concrete); w.position.set(x, 0, 2.2); g.add(w); }
+  const door = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.8, 0.12), new THREE.MeshStandardMaterial({ color: 0x4d5357, metalness: 0.7, roughness: 0.5 }));
+  door.position.set(0, -0.4, 2.04); g.add(door);
+  const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.04, 6, 16), dark); wheel.position.set(0, -0.3, 2.12); g.add(wheel);
+  const logo = logoPlate('↑', 0.8); logo.position.set(0, 0.95, 2.02); g.add(logo);
   place(g, SITES.arrow, -0.2, -0.6);
   scene.add(shadowy(g));
 }
