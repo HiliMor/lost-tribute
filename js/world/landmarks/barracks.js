@@ -25,9 +25,9 @@ function sidingTexture(hex) {
 export function createBarracks(scene) {
   const site = SITES.barracks;
   const village = new THREE.Group();
-  const roofM = new THREE.MeshStandardMaterial({ color: 0x5a3c2a, roughness: 0.85, side: THREE.DoubleSide });
+  const roofM = new THREE.MeshStandardMaterial({ color: 0x5b4e44, roughness: 0.85, side: THREE.DoubleSide });
   const trimM = new THREE.MeshStandardMaterial({ color: 0xe9e1cc, roughness: 0.7 });
-  const sidings = ['#cdb98a', '#d8c79b', '#bfa979', '#c9b48c', '#d2bf92'].map((h) => new THREE.MeshStandardMaterial({ map: sidingTexture(h), roughness: 0.8 }));
+  const sidings = ['#e3c35c', '#dcbb62', '#e8cc74', '#d9b458', '#e6c86a'].map((h) => new THREE.MeshStandardMaterial({ map: sidingTexture(h), roughness: 0.8 }));
 
   const brickM = new THREE.MeshStandardMaterial({ color: 0x8a5a44, roughness: 0.9 });
   const flowerM = [0xc84a5a, 0xe8c040, 0xe0e0e0, 0x8a4ab0].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8 }));
@@ -55,6 +55,12 @@ export function createBarracks(scene) {
     for (const px of [-1.5, 1.5]) { const rail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 2), trimM); rail.position.set(px, 1.5, 4.6); house.add(rail); }
     const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.6, 0.6), brickM); chimney.position.set(2.6, 5.2, -1.2); house.add(chimney);
     for (const px of [-3.2, 3.2]) { const bed = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.25, 0.6), flowerM[(i + (px > 0 ? 1 : 0)) % flowerM.length]); bed.position.set(px, 0.2, 3.9); house.add(bed); }
+    // a white picket fence round the front yard
+    for (let k = -8; k <= 8; k++) {
+      if (Math.abs(k) < 2) continue;                                  // the gate
+      const pk = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.9, 0.04), trimM); pk.position.set(k * 0.3, 0.45, 7.6); house.add(pk);
+    }
+    for (const y of [0.3, 0.7]) for (const sd of [-1, 1]) { const rail = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.06, 0.04), trimM); rail.position.set(sd * 1.5, y, 7.58); house.add(rail); }
     house.position.set(x, terrainH(x, z) + 0.05, z);
     house.rotation.y = Math.atan2(site.x - x, site.z - z);   // front porch faces the lawn
     village.add(house);
@@ -93,14 +99,10 @@ export function createBarracks(scene) {
     if (Math.abs(a - Math.PI * 1.5) < 0.12) continue;          // the gap where the path leaves to the south
     const x = site.x + Math.cos(a) * 112, z = site.z + Math.sin(a) * 100;
     const p = new THREE.Group();
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.18, 5.4, 8), pylonM);
-    pole.position.y = 2.7; p.add(pole);
-    const cap = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.35, 0.5), capM);
-    cap.position.y = 5.5; p.add(cap);
-    for (const hy of [1.5, 2.6, 3.7, 4.8]) {
-      const ins = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.12, 10), capM);
-      ins.position.y = hy; p.add(ins);
-    }
+    const pole = new THREE.Mesh(new THREE.BoxGeometry(0.42, 3.6, 0.42), pylonM); pole.position.y = 1.8; p.add(pole);
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.25, 0.46), capM); band.position.y = 3.3; p.add(band);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.33, 14, 10), capM); ball.position.y = 3.95; p.add(ball);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 0.2, 10), new THREE.MeshStandardMaterial({ color: 0x6b5a44, roughness: 1 })); base.position.y = 0.05; p.add(base);
     p.position.set(x, terrainH(x, z), z);
     village.add(p);
   }
@@ -108,22 +110,29 @@ export function createBarracks(scene) {
   return village;
 }
 
-// A DHARMA van: a VW bus in blue and white with the octagon on its side. `rusty` = decades abandoned.
+// A DHARMA van: a VW bus, sky blue below and cream above, with the DHARMA octagon on its nose.
+// `rusty` = decades abandoned in the jungle.
 export function dharmaVan(x, z, ry, rusty = false) {
   const van = new THREE.Group();
-  const blue = new THREE.MeshStandardMaterial({ color: rusty ? 0x5a6a72 : 0x3f6f9e, roughness: rusty ? 0.9 : 0.5, metalness: 0.2 });
-  const white = new THREE.MeshStandardMaterial({ color: rusty ? 0xa89c86 : 0xece8dc, roughness: rusty ? 0.9 : 0.5 });
-  const glass = new THREE.MeshStandardMaterial({ color: 0x1c2328, roughness: 0.2, metalness: 0.5 });
+  const blue = new THREE.MeshStandardMaterial({ color: rusty ? 0x6c93ab : 0x69a6d6, roughness: rusty ? 0.85 : 0.45, metalness: 0.2 });
+  const white = new THREE.MeshStandardMaterial({ color: rusty ? 0xcdbfa2 : 0xf1ece0, roughness: rusty ? 0.85 : 0.45 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0x1c2328, roughness: 0.15, metalness: 0.5 });
   const tyre = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.9 });
+  const chrome = new THREE.MeshStandardMaterial({ color: rusty ? 0x6a5a48 : 0xd8dadc, roughness: 0.3, metalness: 0.8 });
   const lower = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.9, 1.8), blue); lower.position.y = 0.85; van.add(lower);
   const upper = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.9, 1.8), white); upper.position.y = 1.75; van.add(upper);
-  const win = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.45, 1.82), glass); win.position.set(-0.2, 1.8, 0); van.add(win);
-  const screen = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 1.5), glass); screen.position.set(2.11, 1.8, 0); van.add(screen);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.12, 1.7), white); roof.position.y = 2.25; van.add(roof);
+  for (let i = 0; i < 4; i++) { const w = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.45, 1.82), glass); w.position.set(-1.45 + i * 0.85, 1.82, 0); van.add(w); }
+  const screen = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 1.6), glass); screen.position.set(2.11, 1.82, 0); van.add(screen);
   const vee = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.8, 0.8), white); vee.position.set(2.12, 1.1, 0); vee.rotation.x = Math.PI / 4; van.add(vee);
+  const logo = new THREE.Mesh(new THREE.CircleGeometry(0.2, 8), new THREE.MeshStandardMaterial({ color: 0x1d1d1d })); logo.position.set(2.16, 1.2, 0); logo.rotation.y = Math.PI / 2; van.add(logo);
+  for (const zz of [-0.62, 0.62]) { const hl = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.06, 14), chrome); hl.rotation.z = Math.PI / 2; hl.position.set(2.13, 1.05, zz); van.add(hl); }
+  for (const xx of [2.15, -2.15]) { const bumper = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 1.9), chrome); bumper.position.set(xx, 0.5, 0); van.add(bumper); }
   for (const [wx, wz] of [[1.4, 0.9], [1.4, -0.9], [-1.4, 0.9], [-1.4, -0.9]]) {
     const w = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.25, 14), tyre); w.rotation.x = Math.PI / 2; w.position.set(wx, 0.36, wz); van.add(w);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.27, 12), white); hub.rotation.x = Math.PI / 2; hub.position.set(wx, 0.36, wz); van.add(hub);
   }
-  const logo = new THREE.Mesh(new THREE.CircleGeometry(0.35, 8), white); logo.position.set(0.3, 0.85, 0.91); van.add(logo);
+  const side = new THREE.Mesh(new THREE.CircleGeometry(0.3, 8), white); side.position.set(0.3, 0.85, 0.91); van.add(side);
   van.position.set(x, terrainH(x, z), z); van.rotation.y = ry;
   return van;
 }

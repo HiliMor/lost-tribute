@@ -21,8 +21,8 @@ function grimyPaint(hex) {
 export function createBeechcraft(scene) {
   const site = SITES.beechcraft;
   const plane = new THREE.Group();
-  const white = grimyPaint('#d9d4c4');
-  const stripe = new THREE.MeshStandardMaterial({ color: 0x6d2a22, roughness: 0.7 });
+  const white = grimyPaint('#dcc27a');   // faded yellow, as the plane in "Deus Ex Machina"
+  const stripe = new THREE.MeshStandardMaterial({ color: 0x4a3322, roughness: 0.7 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x151a1e, roughness: 0.35 });
 
   // fuselage along +z (nose forward), tapering to the tail

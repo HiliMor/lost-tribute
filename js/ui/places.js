@@ -14,12 +14,12 @@ export const PLACES = [
   {
     id: 'cockpit', season: 1, name: 'The Cockpit', ref: 'Season 1 · "Pilot"',
     text: 'Jack, Kate and Charlie trekked into the jungle to find the transceiver. The pilot was still alive, until the Monster took him.',
-    site: 'cockpit', lift: 3, dist: 30, rise: 20, clear: 14,
+    site: 'cockpit', lift: 3, dist: 22, rise: 2, front: true,
   },
   {
     id: 'caves', season: 1, name: 'The Caves', ref: 'Season 1 · "White Rabbit"',
     text: 'Jack found fresh water in the caves, and half the survivors moved there. Inside lay "Adam and Eve", two old skeletons.',
-    site: 'caves', lift: 3, dist: 30, rise: 5, front: true,
+    site: 'caves', lift: 5, dist: 34, rise: 3, face: 2.13,
   },
   {
     id: 'golf', season: 1, name: 'The Golf Course', ref: 'Season 1 · "Solitary"',
@@ -29,7 +29,7 @@ export const PLACES = [
   {
     id: 'rousseau', season: 1, name: "Rousseau's shelter", ref: 'Season 1 · "Solitary"',
     text: 'Danielle Rousseau, shipwrecked sixteen years earlier, caught Sayid in one of her traps and held him here.',
-    site: 'rousseau', lift: 1.2, dist: 14, rise: 3,
+    site: 'rousseau', lift: 1.2, dist: 15, rise: 3, face: 0.7,
   },
   {
     id: 'beechcraft', season: 1, name: 'The Beechcraft', ref: 'Season 1 · "Deus Ex Machina"',
@@ -59,17 +59,17 @@ export const PLACES = [
   {
     id: 'arrow', season: 2, name: 'The Arrow', ref: 'Season 2 · "The Other 48 Days"',
     text: 'The tail section survivors took shelter in this DHARMA station, and found a glass eye and a Bible.',
-    site: 'arrow', lift: 1, dist: 25, rise: 8,
+    site: 'arrow', lift: 1.4, dist: 13, rise: 2, face: -0.6,
   },
   {
     id: 'staff', season: 2, name: 'The Staff', ref: 'Season 2 · "Maternity Leave"',
     text: "The DHARMA medical station where the Others held Claire and took her baby's vaccines.",
-    site: 'staff', lift: 1.5, dist: 24, rise: 6,
+    site: 'staff', lift: 1.5, dist: 17, rise: 4, face: 2.2,
   },
   {
     id: 'pearl', season: 2, name: 'The Pearl', ref: 'Season 2 · "?"',
     text: 'Locke and Eko found this observation station, whose monitors watched the Swan. Pressing the button was a psychological experiment.',
-    site: 'pearl', lift: 0.5, dist: 14, rise: 4, front: true,
+    site: 'pearl', lift: 0.5, dist: 11, rise: 4, face: 0.8,
   },
   {
     id: 'balloon', season: 2, name: "Henry Gale's balloon", ref: 'Season 2 · "The Whole Truth"',
@@ -89,7 +89,7 @@ export const PLACES = [
   {
     id: 'hydra', season: 3, name: 'Hydra Island', ref: 'Season 3 · "A Tale of Two Cities"',
     text: 'The small island off the coast where Jack, Kate and Sawyer were held. Kate and Sawyer spent days in the bear cages.',
-    site: 'hydra', lift: 3, dist: 90, rise: 28,
+    site: 'hydra', lift: 3, dist: 48, rise: 14, face: Math.atan2(ISLAND.x - SITES.hydra.x, ISLAND.z - SITES.hydra.z) + Math.PI + 0.5,
   },
   {
     id: 'dharmaVan', season: 3, name: 'The DHARMA van', ref: 'Season 3 · "Tricia Tanaka Is Dead"',
@@ -109,7 +109,7 @@ export const PLACES = [
   {
     id: 'jacobsCabin', season: 3, name: "Jacob's cabin", ref: 'Season 3 · "The Man Behind the Curtain"',
     text: "Ben brought Locke to meet Jacob in this cabin, ringed by a line of ash. Someone inside whispered \"Help me.\"",
-    site: 'jacobsCabin', lift: 2, dist: 28, rise: 8, clear: 24,
+    site: 'jacobsCabin', lift: 2, dist: 21, rise: 5, face: 0.5,
   },
   {
     id: 'lookingGlass', season: 3, name: 'The Looking Glass', ref: 'Season 3 · "Through the Looking Glass"',
@@ -139,7 +139,7 @@ export const PLACES = [
   {
     id: 'jacobsCave', season: 6, name: "Jacob's cave", ref: 'Season 6 · "The Substitute"',
     text: "The Man in Black showed Sawyer the candidates' names written on this cave's ceiling, each with a number: 4, 8, 15, 16, 23, 42.",
-    site: 'jacobsCave', lift: 2.5, offshore: 10, sea: 26, side: 5, height: 4,
+    site: 'jacobsCave', lift: 7, offshore: 10, sea: 55, side: 30, height: 7,
   },
 ];
 

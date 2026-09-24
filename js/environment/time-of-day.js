@@ -1,4 +1,4 @@
-// Time of day: one value (0 = golden hour, 1 = night) blends four keyframes and drives
+// Time of day: one value (-0.5 = early afternoon, 0 = golden hour, 1 = night) blends four keyframes and drives
 // every light, colour and fog setting in the scene through the shared uniforms.
 import * as THREE from 'three/webgpu';
 import { $ } from '../core/utils.js';
@@ -10,6 +10,7 @@ import {
 import { lightState } from './lights.js';
 
 const KEYS = [
+  { t: -0.50, el: 58, zen: '#2f6fc0', hor: '#b7d3ea', sun: '#fff3de', cloud: '#98a2b6', deep: '#0c4a64', shal: '#3cc4bc', fog: '#bfd2e2', light: 3.6, lcol: '#fff2dc', hs: '#a9c6ea', hg: '#6d6a46', hi: 1.0, exp: 0.6, smoke: '#cfc6b8', foam: 1.0 },
   { t: 0.00, el: 24, zen: '#2e5d9e', hor: '#f2b87c', sun: '#ffd9a2', cloud: '#7a7390', deep: '#0b3b4b', shal: '#35b3a8', fog: '#d7ad85', light: 3.3, lcol: '#ffd6a8', hs: '#9fb8d8', hg: '#7a6444', hi: 0.8, exp: 0.66, smoke: '#b9a08a', foam: 1.0 },
   { t: 0.40, el: 2.2, zen: '#1c3a78', hor: '#ff8a4c', sun: '#ffb070', cloud: '#453a5e', deep: '#0a2c3d', shal: '#22898a', fog: '#c67a5c', light: 2.2, lcol: '#ffa862', hs: '#7282b8', hg: '#4d3b30', hi: 0.6, exp: 0.95, smoke: '#9a6d5c', foam: 0.85 },
   { t: 0.60, el: -3.5, zen: '#0f1d48', hor: '#b2536a', sun: '#ff6a4a', cloud: '#2b2442', deep: '#061c2a', shal: '#0f4a55', fog: '#58395a', light: 0.25, lcol: '#ff7a50', hs: '#3a4474', hg: '#2a2020', hi: 0.4, exp: 1.15, smoke: '#4a3a4a', foam: 0.45 },
@@ -53,10 +54,10 @@ export function createTimeOfDay({ scene, renderer, hemi, sun, environment }) {
     if (sunI >= moonI) { sun.color.copy(lerpKey(t, 'lcol')); sun.intensity = sunI; lightState.dir.copy(uSunDir.value); }
     else { sun.color.set('#8ea6ff'); sun.intensity = moonI; lightState.dir.copy(moonV); }
     // HUD clock and label
-    const mins = Math.round(17 * 60 + 48 + t * 112);
+    const mins = Math.round(t < 0 ? 17 * 60 + 48 + t * 2 * 300 : 17 * 60 + 48 + t * 112);
     const hh = Math.floor(mins / 60), mm = String(mins % 60).padStart(2, '0');
     $('clock').textContent = `22 Sep 2004 · ${hh}:${mm}`;
-    $('todOut').textContent = t < 0.2 ? 'Golden hour' : t < 0.5 ? 'Sunset' : t < 0.72 ? 'Dusk' : 'Night';
+    $('todOut').textContent = t < -0.2 ? 'Day' : t < 0.2 ? 'Golden hour' : t < 0.5 ? 'Sunset' : t < 0.72 ? 'Dusk' : 'Night';
   }
   applyTime(0.4);
   $('tod').addEventListener('input', (e) => applyTime(e.target.value / 1000));

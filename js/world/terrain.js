@@ -1,8 +1,8 @@
 // The island ground: beach, dunes, jungle floor, hills and the two mountains.
 import * as THREE from 'three/webgpu';
-import { float, vec2, vec3, sin, mix, smoothstep, abs, length, positionWorld, vertexColor, mx_noise_float } from 'three/tsl';
+import { float, vec2, vec3, sin, mix, smoothstep, abs, length, positionWorld, vertexColor, attribute, mx_noise_float } from 'three/tsl';
 import { fbm, sstep, landDist, terrainH, WORLD_BOUNDS } from '../core/terrain-math.js';
-import { SITES } from '../core/layout.js';
+import { SITES, CLEARINGS } from '../core/layout.js';
 
 // A grid of vertices at the given x and z positions (uneven spacing = more detail where it matters).
 export function gridGeometry(xs, zs, yFn) {
@@ -61,7 +61,11 @@ export function createTerrain(scene) {
   const C = (h) => new THREE.Color(h);
   const wet = C('#8f7a58'), sand = C('#e2cfa2'), sand2 = C('#cdb487'), grass = C('#6f7536'), floor = C('#44552a'), rock = C('#4a433c'), seabed = C('#5f7a6a');
   const lawn = C('#6f8a3c'), dirt = C('#5c4f3a');
-  const clearing = C('#56602e');
+  const clearing = C('#56602e'), meadow = C('#6b8a36'), meadow2 = C('#859a44');
+  // open grass in every clearing (the Temple courtyard and the runway are bare earth instead)
+  const bare = { temple: 1, runwayA: 1, runwayB: 1, runwayM: 1, hatch: 1 };
+  const glades = CLEARINGS.filter((c) => !bare[c.site]).map((c) => ({ ...SITES[c.site], r: Math.max(12, c.r) }));
+  const litterW = new Float32Array(p.count);
   const B = SITES.barracks, T = SITES.temple, K = SITES.blackRock, SH = SITES.hatch;
   const tmp = new THREE.Color();
   for (let i = 0; i < p.count; i++) {
@@ -72,9 +76,14 @@ export function createTerrain(scene) {
     if (d < -4) tmp.lerp(seabed, sstep(-4, -40, d));
     tmp.lerp(grass, sstep(17, 27, d + (fbm(x * .1, z * .1, 2) - .5) * 8));
     tmp.lerp(floor, sstep(26, 40, d));
+    let glade = 0;
+    for (const c of glades) glade = Math.max(glade, 1 - sstep(c.r * 0.75, c.r * 1.2, Math.hypot(x - c.x, z - c.z)));
+    glade *= sstep(6, 16, d);
+    tmp.lerp(meadow2.clone().lerp(meadow, fbm(x * .05, z * .05, 3)), glade * 0.9);
+    litterW[i] = sstep(26, 40, d) * (1 - glade);
     const steep = 1 - nrm.getY(i);
-    tmp.lerp(rock, sstep(0.22, 0.45, steep) * (d > 10 ? 1 : 0));
-    if (y > 60) tmp.lerp(rock, sstep(80, 150, y) * .5);
+    tmp.lerp(rock, sstep(0.22, 0.45, steep) * (d > 10 ? 1 : 0) * (1 - glade * 0.85));
+    if (y > 120) tmp.lerp(rock, sstep(160, 260, y) * .35);   // the high peaks are green too, as on Oahu's ridges
     // the Barracks lawn and the trampled ground around the Temple
     tmp.lerp(lawn, 1 - sstep(70, 105, Math.hypot(x - B.x, z - B.z)));
     tmp.lerp(dirt, (1 - sstep(40, 70, Math.hypot(x - T.x, z - T.z))) * 0.7);
@@ -83,6 +92,7 @@ export function createTerrain(scene) {
     col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
   }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setAttribute('litter', new THREE.BufferAttribute(litterW, 1));
 
   const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.95, metalness: 0 });
   const pw = positionWorld;
@@ -98,10 +108,10 @@ export function createTerrain(scene) {
     .mul(smoothstep(90.0, 160.0, length(pw.xz.sub(vec2(4.0, 5.0)))).oneMinus());   // only on the crash beach
   // jungle floor: fallen leaves and moss, mottled at two scales
   const vc = vertexColor();
-  const jungleF = smoothstep(0.004, 0.03, vc.g.sub(vc.r)).mul(0.75);
+  const jungleF = attribute('litter', 'float').mul(0.8);
   const mossN = mx_noise_float(pw.mul(0.22).add(3.0));
   const leafN = mx_noise_float(pw.mul(1.7)).mul(0.5).add(0.5);
-  const litter = mix(vec3(0.1, 0.07, 0.035), vec3(0.055, 0.1, 0.03), smoothstep(-0.25, 0.35, mossN)).mul(leafN.mul(0.6).add(0.7));
+  const litter = mix(vec3(0.13, 0.09, 0.045), vec3(0.075, 0.13, 0.035), smoothstep(-0.4, 0.2, mossN)).mul(leafN.mul(0.6).add(0.75));
   const ground = mix(vc.mul(grain.add(ripple).add(1.0)).mul(mix(1.0, 0.62, wetF)), litter, jungleF);
   mat.colorNode = mix(ground, vec3(0.11, 0.095, 0.05), wrack);
   mat.roughnessNode = mix(float(0.95), float(0.32), wetF);

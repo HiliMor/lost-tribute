@@ -121,6 +121,7 @@ setupIslandMap({
     flight.flyTo(from, to);
     try { history.replaceState(null, '', '#' + slug(place)); } catch { /* not allowed in some embeds */ }
   },
+  where: () => ({ pos: camera.position, target: controls.target }),
 });
 // a link like …/#black-rock opens straight at that place
 const linked = [...PLACES, OVERVIEW].find((p) => '#' + slug(p) === location.hash);

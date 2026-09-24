@@ -9,7 +9,7 @@ A fan-made tribute to *LOST*, which premiered on 22 September 2004. It shows the
 ## What's in it
 
 - **The whole Island**, traced from [Choekaas's map of the Island](https://i.imgur.com/NrhXLUu.jpeg) (updated fall 2024), the map [r/lost recommends as the most accurate](https://www.reddit.com/r/lost/comments/1h8lpkr/which_map_of_the_island_is_most_accurate/). The coastline, the mountains and every landmark's position come from his map; the island map in the app is drawn north-up like his. Around the camp, the hand-built crash beach takes over. Distances are true to the map's scale (the island is about 2 km across).
-- **An island map** (press **M**) with **27 places from the show**, grouped by season. Click a pin or a name to fly there; each place says which episode it's from:
+- **An island map** (press **M**): a hand-coloured chart with trails, a scale bar and a "you are here" marker, and **27 places from the show** grouped by season. Click a pin or a name to fly there; each place says which episode it's from:
   - **Season 1:** crash site, the Cockpit, the Caves, the Golf Course, Rousseau's shelter, the Beechcraft, the Hatch, the Black Rock, the Radio Tower
   - **Season 2:** the Tail Section, the Arrow, the Staff, the Pearl, Henry Gale's balloon, the Statue of Taweret
   - **Season 3:** the Barracks, Hydra Island (with Room 23 and the bear cages), Hurley's DHARMA van, the Flame, the Submarine dock, Jacob's cabin, the Looking Glass
@@ -18,7 +18,8 @@ A fan-made tribute to *LOST*, which premiered on 22 September 2004. It shows the
   - **Season 6:** the Temple, the Lighthouse, Jacob's cave
 - Every place has its own link, e.g. [#black-rock](https://hilimor.github.io/lost-tribute/#black-rock) or [#statue](https://hilimor.github.io/lost-tribute/#statue)
 - A shader-driven ocean with foam and shallows on every coast
-- A light slider from golden hour to night: stars, moonlight, the lighthouse beams and the hatch light
+- A light slider from bright tropical day through golden hour and sunset to night: stars, moonlight, the lighthouse beams and the hatch light
+- Jungle undergrowth (grass, ferns, elephant-ear plants) and places modelled after stills from the show: the Caves' cliff and spring, the Arrow's door in the hillside, the Pearl in its tall grass, the Pala Ferry pergola, Hurley's golf course, the yellow Barracks houses and sky-blue DHARMA vans, Jacob's sandstone cave, and more
 - **The Swan:** a working 108-minute countdown. Type `4 8 15 16 23 42` and press Execute before it hits zero.
 - Palms, crabs, seabirds, a campfire, and optional sound generated in the browser
 

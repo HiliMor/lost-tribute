@@ -48,6 +48,46 @@ function frondTexture() {
   });
 }
 
+// A tuft of grass blades on a transparent background.
+function grassTexture() {
+  const t = canvasTex(256, 256, (g, W, H) => {
+    g.clearRect(0, 0, W, H);
+    for (let i = 0; i < 70; i++) {
+      const x = W * (0.08 + Math.random() * 0.84), h = H * (0.45 + Math.random() * 0.52), bend = (Math.random() - 0.5) * W * 0.3, w = 3 + Math.random() * 4;
+      g.fillStyle = `hsl(${70 + Math.random() * 32}, ${38 + Math.random() * 22}%, ${26 + Math.random() * 22}%)`;
+      g.beginPath(); g.moveTo(x - w, H); g.quadraticCurveTo(x - w * 0.5 + bend * 0.4, H - h * 0.6, x + bend, H - h); g.quadraticCurveTo(x + w * 0.5 + bend * 0.4, H - h * 0.6, x + w, H); g.fill();
+    }
+  });
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+// An elephant-ear leaf (taro), heart-shaped with pale veins: the big leaves all over the show's jungle.
+function earTexture() {
+  const t = canvasTex(256, 256, (g, W, H) => {
+    g.clearRect(0, 0, W, H);
+    const cx = W / 2;
+    g.fillStyle = '#4f7a2a';
+    g.beginPath(); g.moveTo(cx, H * 0.97);
+    g.bezierCurveTo(W * 0.02, H * 0.72, W * 0.02, H * 0.08, cx - W * 0.1, H * 0.06);
+    g.lineTo(cx, H * 0.2); g.lineTo(cx + W * 0.1, H * 0.06);
+    g.bezierCurveTo(W * 0.98, H * 0.08, W * 0.98, H * 0.72, cx, H * 0.97); g.fill();
+    const gr = g.createRadialGradient(cx, H * 0.3, 10, cx, H * 0.5, W * 0.6);
+    gr.addColorStop(0, 'rgba(150,190,80,.35)'); gr.addColorStop(1, 'rgba(20,50,10,.3)');
+    g.globalCompositeOperation = 'source-atop'; g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    g.strokeStyle = 'rgba(190,215,130,.55)'; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(cx, H * 0.22); g.lineTo(cx, H * 0.95); g.stroke();
+    g.lineWidth = 1.5;
+    for (let k = 0; k < 7; k++) for (const sd of [-1, 1]) {
+      const y = H * (0.3 + k * 0.09);
+      g.beginPath(); g.moveTo(cx, y); g.quadraticCurveTo(cx + sd * W * 0.2, y - H * 0.02, cx + sd * W * (0.42 - k * 0.035), y + H * 0.1); g.stroke();
+    }
+    g.globalCompositeOperation = 'source-over';
+  });
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
 /* ---------- geometry ---------- */
 
 // A crown is clusters of leaf cards whose normals point outward from the crown centre,
@@ -127,7 +167,61 @@ function fernGeometry(fronds, length) {
   return mergeGeometries(parts);
 }
 
+// A grass tuft: three crossed cards.
+function tuftGeometry(w, h) {
+  const parts = [];
+  for (let i = 0; i < 3; i++) {
+    const g = new THREE.PlaneGeometry(w, h); g.translate(0, h / 2, 0); g.rotateY(i * Math.PI / 3);
+    const n = g.attributes.normal; for (let v = 0; v < n.count; v++) n.setXYZ(v, 0, 1, 0);
+    parts.push(g);
+  }
+  return mergeGeometries(parts);
+}
+
+// An elephant-ear plant: leaves held out on long stalks.
+function earPlantGeometry(leaves) {
+  const leafParts = [], stemParts = [];
+  for (let i = 0; i < leaves; i++) {
+    const a = i / leaves * Math.PI * 2 + R(-0.3, 0.3), len = R(0.8, 1.5), tilt = R(0.35, 0.7);
+    const tip = new THREE.Vector3(Math.cos(a) * len * tilt, len, Math.sin(a) * len * tilt);
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), tip.clone().normalize());
+    stemParts.push(new THREE.CylinderGeometry(0.02, 0.035, tip.length(), 4).translate(0, tip.length() / 2, 0).applyQuaternion(q));
+    const size = R(0.7, 1.1);
+    const lf = new THREE.PlaneGeometry(size * 0.8, size);
+    lf.translate(0, -size * 0.45, 0);                 // leaf hangs from its stalk tip
+    lf.rotateX(-Math.PI / 2 + R(0.5, 0.9));          // mostly flat, drooping outwards
+    lf.rotateY(-a + Math.PI / 2);
+    lf.translate(tip.x, tip.y, tip.z);
+    const n = lf.attributes.normal; for (let v = 0; v < n.count; v++) n.setXYZ(v, n.getX(v) * 0.3, 1, n.getZ(v) * 0.3);
+    leafParts.push(lf);
+  }
+  return { leaves: mergeGeometries(leafParts), stems: mergeGeometries(stemParts) };
+}
+
 /* ---------- placement ---------- */
+
+// A patch of tall grass round a point (the Pearl's meadow), leaving a clear circle in the middle.
+let grassMat = null;
+export function grassField(scene, cx, cz, { radius = 20, clear = 3, count = 1600, height = 1.3 } = {}) {
+  if (!grassMat) {
+    const tex = grassTexture();
+    grassMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.9, side: THREE.DoubleSide, alphaTest: 0.4 });
+    grassMat.colorNode = texture(tex, uv()).rgb.mul(1.5).mul(uv().y.mul(0.55).add(0.6));
+    grassMat.opacityNode = texture(tex, uv()).a.mul(1.7).clamp(0, 1);
+  }
+  const im = new THREE.InstancedMesh(tuftGeometry(1.2, height), grassMat, count);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), ps = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();
+  for (let i = 0; i < count; i++) {
+    const a = R(0, Math.PI * 2), r = clear + (radius - clear) * Math.sqrt(R(0, 1));
+    const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r, s = R(0.7, 1.3);
+    ps.set(x, surfaceH(x, z) - 0.05, z); q.setFromEuler(new THREE.Euler(0, R(0, 6.28), 0));
+    im.setMatrixAt(i, m.compose(ps, q, sc.set(s, s * R(0.8, 1.2), s)));
+    im.setColorAt(i, col.set(['#a9bf64', '#9ab85a', '#c2c070', '#8fae52'][i % 4]).multiplyScalar(R(0.85, 1.1)));
+  }
+  im.receiveShadow = true;
+  scene.add(im);
+  return im;
+}
 
 const PLACE_SITES = Object.keys(SITES).filter((k) => !['lookingGlass'].includes(k));
 const CLEAR = Object.fromEntries(CLEARINGS.map((c) => [c.site, c]));
@@ -224,4 +318,43 @@ export function createJungle(scene) {
     tfCrowns.setColorAt(i, col.copy(fernGreens[i % 4]).multiplyScalar(R(0.85, 1.1)));
   });
   for (const im of [tfTrunks, tfCrowns]) { im.castShadow = true; im.receiveShadow = true; scene.add(im); }
+
+  // grass tufts round the edges of every clearing and under the trees
+  const grassTex = grassTexture();
+  const grassM = new THREE.MeshStandardNodeMaterial({ roughness: 0.9, side: THREE.DoubleSide, alphaTest: 0.4 });
+  grassM.colorNode = texture(grassTex, uv()).rgb.mul(1.5).mul(uv().y.mul(0.55).add(0.6));   // darker at the roots
+  grassM.opacityNode = texture(grassTex, uv()).a.mul(1.7).clamp(0, 1);
+  const tuftSpots = scatter(Math.round(46000 * k), 0, 75, 12, 0.8);
+  const tufts = new THREE.InstancedMesh(tuftGeometry(1.3, 0.8), grassM, tuftSpots.length);
+  const grassGreens = ['#9ab85a', '#86a64c', '#a9bf64', '#7f9a46', '#b3b865'].map((c) => new THREE.Color(c));
+  tuftSpots.forEach(([x, z], i) => {
+    const s = R(0.6, 1.4);
+    ps.set(x, surfaceH(x, z) - 0.05, z);
+    q.setFromEuler(new THREE.Euler(0, R(0, 6.28), 0));
+    tufts.setMatrixAt(i, m.compose(ps, q, sc.set(s, s * R(0.7, 1.3), s)));
+    tufts.setColorAt(i, col.copy(grassGreens[i % 5]).multiplyScalar(R(0.85, 1.1)));
+  });
+  tufts.receiveShadow = true;
+  scene.add(tufts);
+
+  // elephant ears
+  const earTex = earTexture();
+  const earM = new THREE.MeshStandardNodeMaterial({ roughness: 0.6, side: THREE.DoubleSide, alphaTest: 0.5 });
+  earM.colorNode = texture(earTex, uv()).rgb.mul(1.5);
+  earM.opacityNode = texture(earTex, uv()).a;
+  const stemM = new THREE.MeshStandardMaterial({ color: 0x6f8f3a, roughness: 0.8 });
+  const ear = earPlantGeometry(7);
+  const earSpots = scatter(Math.round(7000 * k), 0, 70, 20, 0.85);
+  const earLeaves = new THREE.InstancedMesh(ear.leaves, earM, earSpots.length);
+  const earStems = new THREE.InstancedMesh(ear.stems, stemM, earSpots.length);
+  earSpots.forEach(([x, z], i) => {
+    const s = R(0.7, 1.6);
+    ps.set(x, surfaceH(x, z) - 0.05, z);
+    q.setFromEuler(new THREE.Euler(0, R(0, 6.28), 0));
+    m.compose(ps, q, sc.setScalar(s));
+    earLeaves.setMatrixAt(i, m); earStems.setMatrixAt(i, m);
+    earLeaves.setColorAt(i, col.set('#ffffff').multiplyScalar(R(0.8, 1.1)));
+  });
+  earLeaves.castShadow = true;
+  for (const im of [earLeaves, earStems]) { im.receiveShadow = true; scene.add(im); }
 }

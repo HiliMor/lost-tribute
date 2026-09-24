@@ -18,7 +18,7 @@ export function createHatch(scene) {
   pit.material.side = THREE.DoubleSide; pit.rotation.y = Math.PI / 4; pit.position.y = -0.2; g.add(pit);
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), earth); floor.rotation.x = -Math.PI / 2; floor.position.y = -0.48; g.add(floor);
   // low spoil heaps of dug earth around the pit
-  const spoil = new THREE.MeshStandardMaterial({ color: 0x3a3222, roughness: 1 });
+  const spoil = new THREE.MeshStandardMaterial({ color: 0x6a5638, roughness: 1 });
   for (let i = 0; i < 14; i++) {
     const a = i / 14 * Math.PI * 2 + R(-0.2, 0.2), r = R(3.6, 5);
     const heap = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 1), spoil);

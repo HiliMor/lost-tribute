@@ -1,4 +1,4 @@
-// Jacob's lighthouse: a square stone tower on the cliffs of the east coast.
+// Jacob's lighthouse: a rough stone tower on the cliffs of the east coast.
 // At night its lantern burns and two beams sweep the sea ("Lighthouse", season 6).
 import * as THREE from 'three/webgpu';
 import { vec3, sin, dot, normalize, pow, abs, uv, positionWorld, cameraPosition, normalWorld } from 'three/tsl';
@@ -16,17 +16,17 @@ export function createLighthouse(scene) {
   const metal = new THREE.MeshStandardMaterial({ color: 0x2c2a27, roughness: 0.5, metalness: 0.6 });
 
   // tapering square tower
-  const tower = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 3.5, 24, 4, 1), stone);
+  const tower = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 3.5, 24, 12, 1), stone);
   tower.rotation.y = Math.PI / 4; tower.position.y = 12; g.add(tower);
   const plinth = new THREE.Mesh(new THREE.BoxGeometry(6.2, 1.2, 6.2), stone);
   plinth.position.y = 0.4; g.add(plinth);
   // door and slit windows
   const door = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.6, 0.2), new THREE.MeshStandardMaterial({ color: 0x5a3a22, roughness: 0.9 }));
-  door.position.set(0, 1.9, 2.52); g.add(door);
+  door.position.set(0, 1.9, 3.3); g.add(door);
   for (const [y, side] of [[8, 1], [13.5, -1], [18.5, 1]]) {
     const w = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.4, 0.2), dark);
     const r = 3.5 - (y / 24) * 1.1;
-    w.position.set(side > 0 ? 0 : r * 0.7, y, side > 0 ? r * 0.72 : 0); w.rotation.y = side > 0 ? 0 : Math.PI / 2;
+    w.position.set(side > 0 ? 0 : r - 0.02, y, side > 0 ? r - 0.02 : 0); w.rotation.y = side > 0 ? 0 : Math.PI / 2;
     g.add(w);
   }
   // gallery, lantern room and roof

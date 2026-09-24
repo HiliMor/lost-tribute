@@ -124,6 +124,41 @@ export function createTemple(scene) {
   // gate towers
   for (const x of [-gate / 2 - 1.5, gate / 2 + 1.5]) { const tw = new THREE.Mesh(new THREE.BoxGeometry(4, 11, 4), stone); tw.position.set(x, 5, -half); g.add(tw); }
 
+  // overgrowth: vines down every tier, bushes and trees rooted in the ledges, red ginger round the pond
+  const vineM = new THREE.MeshStandardMaterial({ color: 0x2f4a1c, roughness: 0.9 });
+  const bushM = new THREE.MeshStandardMaterial({ color: 0x3f6a26, roughness: 0.9, flatShading: true });
+  let ty = 0;
+  for (const [w, h, d] of tiers) {
+    ty += h;
+    for (let i = 0; i < Math.round(w * 0.9); i++) {
+      const side = i % 4, u = R(-0.48, 0.48), len = R(1, h * 1.3);
+      const x = side < 2 ? u * w : (side === 2 ? -1 : 1) * (w / 2 + 1), z = side < 2 ? (side === 0 ? -1 : 1) * (d / 2 + 1) : u * d;
+      if (side === 0 && Math.abs(x) < 5) continue;                       // keep the stairs clear
+      g.add(strut(V(x, ty, z), V(x + R(-0.3, 0.3), ty - len, z), 0.05, vineM, 4));
+    }
+    for (let i = 0; i < Math.round(w / 5); i++) {
+      const b = new THREE.Mesh(new THREE.IcosahedronGeometry(R(0.8, 1.6), 0), bushM);
+      const edge = R(0, 1) < 0.5;
+      b.position.set(edge ? R(-w / 2, w / 2) : (R(0, 1) < 0.5 ? -1 : 1) * R(w * 0.3, w / 2), ty + 0.6, edge ? (R(0, 1) < 0.5 ? -1 : 1) * R(d * 0.3, d / 2) : R(-d / 2, d / 2));
+      if (Math.abs(b.position.x) < 5 && b.position.z < 0) continue;
+      b.scale.y = 0.7; g.add(b);
+    }
+  }
+  const trunkM = new THREE.MeshStandardMaterial({ color: 0x4d4234, roughness: 1 });
+  const crownM = new THREE.MeshStandardMaterial({ color: 0x3a6424, roughness: 0.9, flatShading: true });
+  for (const [x, y, z, h] of [[-19, 6, 10, 9], [17, 11, 8, 8], [-12, 16, 6, 7], [21, 6, -12, 10], [-20, 6, -13, 8]]) {
+    g.add(strut(V(x, y, z), V(x + R(-0.8, 0.8), y + h, z + R(-0.8, 0.8)), 0.3, trunkM, 7));
+    for (let k = 0; k < 4; k++) { const c = new THREE.Mesh(new THREE.IcosahedronGeometry(R(2, 3.2), 1), crownM); c.position.set(x + R(-2, 2), y + h + R(-0.5, 1.5), z + R(-2, 2)); c.scale.y = 0.65; g.add(c); }
+  }
+  const ginger = new THREE.MeshStandardMaterial({ color: 0xc8202c, roughness: 0.6 });
+  const gingerLeaf = new THREE.MeshStandardMaterial({ color: 0x3f7a2c, roughness: 0.8, side: THREE.DoubleSide });
+  for (let i = 0; i < 40; i++) {
+    const a = R(0, Math.PI * 2), r = R(16.5, 20);
+    const x = Math.cos(a) * r, z = -46 + Math.sin(a) * r;
+    if (z > -30 && Math.abs(x) < 6) continue;                          // the path to the stairs
+    const st = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.5, 6), ginger); st.position.set(x, R(1.1, 1.6), z); g.add(st);
+    for (let k = 0; k < 3; k++) { const lf = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 1.4), gingerLeaf); lf.position.set(x + R(-0.3, 0.3), 0.7, z + R(-0.3, 0.3)); lf.rotation.set(R(-0.4, 0.4), R(0, 6), R(-0.3, 0.3)); g.add(lf); }
+  }
   g.position.set(site.x, terrainH(site.x, site.z) - 0.3, site.z);
   scene.add(shadowy(g));
   g.traverse((o) => { if (o.material?.blending === THREE.AdditiveBlending) o.castShadow = false; });

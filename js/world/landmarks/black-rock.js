@@ -4,7 +4,7 @@ import * as THREE from 'three/webgpu';
 import { SITES } from '../../core/layout.js';
 import { terrainH } from '../../core/terrain-math.js';
 import { surfaceH } from '../terrain.js';
-import { R, shadowy } from '../../core/utils.js';
+import { R, shadowy, canvasTex } from '../../core/utils.js';
 import { woodMaterial, strut } from './materials.js';
 
 const L = 38, B = 10, D = 7;
@@ -73,6 +73,14 @@ export function createBlackRock(scene) {
 
   ship.add(new THREE.Mesh(hullGeometry(), hullWood));
   ship.add(new THREE.Mesh(deckGeometry(), deckWood));
+  // her name carved across the stern, as the survivors first saw it ("Exodus")
+  const nameTex = canvasTex(512, 96, (c, W, H) => {
+    c.fillStyle = '#2a1c0e'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#8a7650'; c.font = '700 60px Georgia, serif'; c.textAlign = 'center'; c.fillText('BLACK ROCK', W / 2, 68);
+    c.fillStyle = 'rgba(30,50,20,.45)'; for (let i = 0; i < 40; i++) c.fillRect(Math.random() * W, Math.random() * H, 4 + Math.random() * 30, 2 + Math.random() * 8);
+  });
+  const nameBoard = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.42), new THREE.MeshStandardMaterial({ map: nameTex, roughness: 1 }));
+  nameBoard.position.set(-L / 2 - 0.15, deckY(0) - 1.1, 0); nameBoard.rotation.y = -Math.PI / 2; ship.add(nameBoard);
   // ribs visible through the hole
   for (let i = 0; i < 6; i++) {
     const s = 0.42 + i * 0.035, x = (s - 0.5) * L, w = halfWidth(s);
